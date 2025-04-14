@@ -50,25 +50,180 @@ class LoginKeystone(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
-class ListImages(APIView):
+
+class InstancesAPIView(APIView):
     def get(self, request):
+        try:
+            # Lấy token admin
+            token = request.headers.get("X-Auth-Token")
+
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            NOVA_URL = "http://192.168.1.20/compute/v2.1/servers"
+            res = requests.get(NOVA_URL, headers=headers)
+            if res.status_code != 200:
+                return Response({"error": "Không lấy được danh sách instances"}, status=res.status_code)
+
+            all_servers = res.json().get("servers", [])
+            active_servers = [server for server in all_servers if server.get("status") == "ACTIVE"]
+
+            return Response({
+                "active_servers": active_servers,
+                "total_active": len(active_servers)
+            })
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def post(self, request):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            # Lấy dữ liệu cần thiết từ request
+            name = request.data.get("name")
+            image_ref = request.data.get("imageRef")
+            flavor_ref = request.data.get("flavorRef")
+            network_id = request.data.get("network_id")
+
+            payload = {
+                "server": {
+                    "name": name,
+                    "imageRef": image_ref,
+                    "flavorRef": flavor_ref,
+                    "networks": [{"uuid": network_id}]
+                }
+            }
+
+            NOVA_URL = "http://192.168.1.20/compute/v2.1/servers"
+            res = requests.post(NOVA_URL, headers=headers, json=payload)
+
+            if res.status_code not in [200, 202]:
+                return Response({"error": "Không thể tạo instance"}, status=res.status_code)
+
+            return Response(res.json(), status=res.status_code)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def put(self, request, server_id):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            # Ví dụ: đổi tên instance
+            new_name = request.data.get("name")
+            payload = {
+                "server": {
+                    "name": new_name
+                }
+            }
+
+            NOVA_URL = f"http://192.168.1.20/compute/v2.1/servers/{server_id}"
+            res = requests.put(NOVA_URL, headers=headers, json=payload)
+
+            if res.status_code != 200:
+                return Response({"error": "Không thể cập nhật instance"}, status=res.status_code)
+
+            return Response({"message": "Cập nhật instance thành công"}, status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def delete(self, request, server_id):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            headers = {
+                "X-Auth-Token": token
+            }
+
+            NOVA_URL = f"http://192.168.1.20/compute/v2.1/servers/{server_id}"
+            res = requests.delete(NOVA_URL, headers=headers)
+
+            if res.status_code != 204:
+                return Response({"error": "Không thể xóa instance"}, status=res.status_code)
+
+            return Response({"message": "Xóa instance thành công"}, status=204)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+
+GLANCE_URL = "http://192.168.1.20/image/v2/images"  # sửa theo IP OpenStack
+class ImageAPIView(APIView):
+
+    def get(self, request, image_id=None):
         token = request.headers.get("X-Auth-Token")
-        if not token:
-            return Response({"error": "Thiếu X-Auth-Token"}, status=status.HTTP_400_BAD_REQUEST)
+        headers = {"X-Auth-Token": token}
 
-        glance_url = "http://192.168.1.20/v2/images"  # Đổi IP theo máy OpenStack
+        try:
+            if image_id:
+                url = f"{GLANCE_URL}/{image_id}"
+                res = requests.get(url, headers=headers)
+            else:
+                res = requests.get(GLANCE_URL, headers=headers)
 
+            if res.status_code != 200:
+                return Response({"error": "Không thể lấy thông tin image"}, status=res.status_code)
+
+            return Response(res.json())
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def post(self, request):
+        token = request.headers.get("X-Auth-Token")
         headers = {
             "X-Auth-Token": token,
             "Content-Type": "application/json"
         }
 
         try:
-            res = requests.get(glance_url, headers=headers)
-            if res.status_code != 200:
-                return Response({"error": "Không lấy được danh sách images"}, status=res.status_code)
+            # Chỉ tạo metadata, chưa upload file
+            image_name = request.data.get("name")
+            disk_format = request.data.get("disk_format", "qcow2")
+            container_format = request.data.get("container_format", "bare")
+            visibility = request.data.get("visibility", "private")
 
-            return Response(res.json())
+            payload = {
+                "name": image_name,
+                "disk_format": disk_format,
+                "container_format": container_format,
+                "visibility": visibility
+            }
+
+            res = requests.post(GLANCE_URL, headers=headers, json=payload)
+
+            if res.status_code not in [201]:
+                return Response({"error": "Không thể tạo image"}, status=res.status_code)
+
+            return Response(res.json(), status=201)
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+
+    def delete(self, request, image_id):
+        token = request.headers.get("X-Auth-Token")
+        headers = {"X-Auth-Token": token}
+
+        try:
+            url = f"{GLANCE_URL}/{image_id}"
+            res = requests.delete(url, headers=headers)
+
+            if res.status_code != 204:
+                return Response({"error": "Không thể xoá image"}, status=res.status_code)
+
+            return Response({"message": "Xoá image thành công"}, status=204)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
