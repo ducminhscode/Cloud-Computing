@@ -3,15 +3,19 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
+import requests
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+
 class LoginKeystone(APIView):
     def post(self, request):
         username = request.data.get("username")
         password = request.data.get("password")
-        project = request.data.get("project", "demo")  # mặc định là demo
+        keystone_url = "http://192.168.1.20/identity/v3"  # sửa IP cho đúng
 
-        keystone_url = "http://192.168.1.20/identity/v3/auth/tokens"  # sửa theo IP OpenStack
-
-        payload = {
+        # Bước 1: Lấy unscoped token
+        unscoped_payload = {
             "auth": {
                 "identity": {
                     "methods": ["password"],
@@ -22,28 +26,79 @@ class LoginKeystone(APIView):
                             "password": password
                         }
                     }
-                },
-                "scope": {
-                    "project": {
-                        "name": project,
-                        "domain": {"id": "default"}
-                    }
                 }
             }
         }
 
         try:
-            res = requests.post(keystone_url, json=payload)
-            if res.status_code != 201:
-                return Response({"error": "Đăng nhập thất bại"}, status=status.HTTP_401_UNAUTHORIZED)
+            # Gửi request lấy unscoped token
+            unscoped_res = requests.post(
+                f"{keystone_url}/auth/tokens",
+                json=unscoped_payload
+            )
 
-            token = res.headers["X-Subject-Token"]
-            user = res.json()["token"]["user"]["name"]
-            project_name = res.json()["token"]["project"]["name"]
+            if unscoped_res.status_code != 201:
+                return Response({"error": "Sai username hoặc password"},
+                                status=status.HTTP_401_UNAUTHORIZED)
+
+            unscoped_token = unscoped_res.headers["X-Subject-Token"]
+
+            # Bước 2: Dùng unscoped token lấy danh sách project của user
+            project_res = requests.get(
+                f"{keystone_url}/auth/projects",
+                headers={"X-Auth-Token": unscoped_token}
+            )
+
+            if project_res.status_code != 200:
+                return Response({"error": "Không thể lấy danh sách project"},
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            projects = project_res.json().get("projects", [])
+            if not projects:
+                return Response({"error": "Người dùng chưa thuộc project nào"},
+                                status=status.HTTP_403_FORBIDDEN)
+
+            # Chọn project đầu tiên (có thể sửa để user chọn project cụ thể)
+            selected_project = projects[0]
+            project_id = selected_project["id"]
+            project_name = selected_project["name"]
+
+            # Bước 3: Lấy scoped token từ project ID
+            scoped_payload = {
+                "auth": {
+                    "identity": {
+                        "methods": ["password"],
+                        "password": {
+                            "user": {
+                                "name": username,
+                                "domain": {"id": "default"},
+                                "password": password
+                            }
+                        }
+                    },
+                    "scope": {
+                        "project": {
+                            "id": project_id
+                        }
+                    }
+                }
+            }
+
+            scoped_res = requests.post(
+                f"{keystone_url}/auth/tokens",
+                json=scoped_payload
+            )
+
+            if scoped_res.status_code != 201:
+                return Response({"error": "Lỗi lấy scoped token"},
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            scoped_token = scoped_res.headers["X-Subject-Token"]
+            user_info = scoped_res.json()["token"]["user"]
 
             return Response({
-                "token": token,
-                "user": user,
+                "token": scoped_token,
+                "user": user_info["name"],
                 "project": project_name
             })
 
