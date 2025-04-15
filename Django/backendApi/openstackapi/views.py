@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from backend.settings import URL_AUTH
 
+
 class LoginKeystone(APIView):
     def post(self, request):
         username = request.data.get("username")
@@ -113,7 +114,7 @@ class InstancesAPIView(APIView):
                 "Content-Type": "application/json"
             }
 
-            NOVA_URL = f"{URL_AUTH}/compute/v2.1/servers"
+            NOVA_URL = f"{URL_AUTH}/compute/v2.1/servers/detail"
             res = requests.get(NOVA_URL, headers=headers)
             if res.status_code != 200:
                 return Response({"error": "Không lấy được danh sách instances"}, status=res.status_code)
@@ -218,6 +219,8 @@ class InstancesAPIView(APIView):
 
 
 GLANCE_URL = f"{URL_AUTH}/image/v2/images"  # sửa theo IP OpenStack
+
+
 class ImageAPIView(APIView):
 
     def get(self, request, image_id=None):
@@ -296,7 +299,7 @@ class NetworkAPIView(APIView):
         try:
             if network_id:
                 url = f"{URL_AUTH}:9696/networking/v2.0/networks/{network_id}"
-                res = requests.get(url, headers= headers)
+                res = requests.get(url, headers=headers)
             else:
                 res = requests.get(f"{URL_AUTH}:9696/networking/v2.0/networks/", headers=headers)
 
@@ -307,7 +310,6 @@ class NetworkAPIView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
-
 
     def post(self, request):
         token = request.headers.get("X-Auth-Token")
@@ -337,6 +339,43 @@ class NetworkAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
+    def put(self, request, network_id):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            if not token:
+                return Response({"error": "Thiếu X-Auth-Token"}, status=401)
+
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            network_name = request.data.get("name")
+            admin_state_up = request.data.get("admin_state_up", True)
+            payload = {
+                "network": {
+                    "name": network_name,
+                    "admin_state_up": admin_state_up
+                }
+            }
+
+            # Lấy thông tin cần cập nhật từ request
+            if not payload:
+                return Response({"error": "Không có dữ liệu cập nhật"}, status=400)
+
+            # Gửi request đến Neutron API
+            url = f"{URL_AUTH}:9696/networking/v2.0/networks/{network_id}"
+            res = requests.put(url, headers=headers, json=payload)
+
+            if res.status_code != 200:
+                return Response({"error": "Không thể cập nhật network", "details": res.json()},
+                                status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
     def delete(self, request, network_id):
         token = request.headers.get("X-Auth-Token")
         headers = {"X-Auth-Token": token}
@@ -352,3 +391,4 @@ class NetworkAPIView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+
