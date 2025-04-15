@@ -1,4 +1,5 @@
 import requests
+from rest_framework.exceptions import ValidationError
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -101,6 +102,107 @@ class LoginKeystone(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+
+def get_admin_token():
+    keystone_url = f"{URL_AUTH}/identity/v3/auth/tokens"
+
+    auth_data = {
+        "auth": {
+            "identity": {
+                "methods": ["password"],
+                "password": {
+                    "user": {
+                        "name": "admin",
+                        "domain": {"name": "default"},
+                        "password": "chuong"
+                    }
+                }
+            },
+            "scope": {
+                "project": {
+                    "name": "admin",
+                    "domain": {"id": "default"}
+                }
+            }
+        }
+    }
+
+    headers = {
+        'Content-Type': 'application/json'
+    }
+
+    try:
+        response = requests.post(keystone_url, json=auth_data, headers=headers)
+
+        if response.status_code == 201:
+            token = response.headers.get('X-Subject-Token')
+            if not token:
+                raise ValidationError("Không thể lấy token từ phản hồi.")
+            return token
+        else:
+            raise ValidationError(f"Không thể lấy token. Lỗi: {response.text}")
+
+    except requests.exceptions.RequestException as e:
+        raise ValidationError(f"Lỗi kết nối với OpenStack Keystone: {str(e)}")
+
+
+class RegisterAPIView(APIView):
+    def post(self, request):
+        username = request.data.get("username")
+        email = request.data.get("email")
+        password = request.data.get("password")
+
+        if not username or not email or not password:
+            raise ValidationError("Tất cả các trường đều phải được điền đầy đủ.")
+
+        keystone_url = f"{URL_AUTH}/identity/v3"
+        admin_token = get_admin_token()
+        headers = {
+            'Content-Type': 'application/json',
+            'X-Auth-Token': admin_token
+        }
+
+        project_data = {
+            "project": {
+                "name": username + "_project_" + email,
+                "description": f"Project cho người dùng {username}",
+                "enabled": True
+            }
+        }
+
+        try:
+            # Gửi yêu cầu POST đến Keystone để tạo project mới
+            response = requests.post(f"{keystone_url}/projects", json=project_data, headers=headers)
+            if response.status_code == 201:
+                project_data = response.json()
+                project_id = project_data["project"]["id"]
+            else:
+                raise ValidationError(f"Không thể tạo project. Lỗi: {response.text}")
+
+
+            user_data = {
+                "user": {
+                    "default_project_id": project_id,
+                    "domain_id": "default",
+                    "enabled": True,
+                    "name": username,
+                    "password": password,
+                    "description": "Người dùng mới",
+                    "email": email
+                }
+            }
+
+            response = requests.post(f"{keystone_url}/users", json=user_data, headers=headers)
+
+            if response.status_code == 201:
+                return Response({
+                    "message": "Người dùng và project đã được tạo thành công.",
+                }, status=status.HTTP_201_CREATED)
+            else:
+                raise ValidationError(f"Không thể tạo người dùng. Lỗi: {response.text}")
+
+        except requests.exceptions.RequestException as e:
+            raise ValidationError(f"Lỗi kết nối với OpenStack Keystone: {str(e)}")
 
 
 class InstancesAPIView(APIView):
