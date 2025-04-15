@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import LoginKeystone, InstancesAPIView, ImageAPIView, NetworkAPIView
+from .views import LoginKeystone, InstancesAPIView, ImageAPIView, NetworkAPIView, VolumeAPIView
 
 urlpatterns = [
     path("login/", LoginKeystone.as_view()),
@@ -11,4 +11,7 @@ urlpatterns = [
 
     path('networks/', NetworkAPIView.as_view()),
     path('networks/<str:network_id>/', NetworkAPIView.as_view()),
+
+    path('volumes/', VolumeAPIView.as_view()),  # GET all, POST
+    path('volumes/<str:volume_id>/', VolumeAPIView.as_view()),  # GET one, DELETE
 ]

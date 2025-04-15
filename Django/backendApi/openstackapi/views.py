@@ -389,3 +389,112 @@ class NetworkAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
+
+class VolumeAPIView(APIView):
+    def get(self, request, volume_id=None):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            project_id = request.headers.get("X-Project-Id")  # cần truyền thêm project_id
+
+            headers = {
+                "X-Auth-Token": token
+            }
+
+            if volume_id:
+                url = f"{URL_AUTH}/volume/v3/{project_id}/volumes/{volume_id}"
+            else:
+                url = f"{URL_AUTH}/volume/v3/{project_id}/volumes/detail"
+
+            res = requests.get(url, headers=headers)
+
+            if res.status_code != 200:
+                return Response({"error": "Không thể lấy thông tin volume"}, status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def post(self, request):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            project_id = request.headers.get("X-Project-Id")
+
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            name = request.data.get("name")
+            size = request.data.get("size")  # tính bằng GB
+
+            payload = {
+                "volume": {
+                    "name": name,
+                    "size": size
+                }
+            }
+
+            url = f"{URL_AUTH}/volume/v3/{project_id}/volumes"
+            res = requests.post(url, headers=headers, json=payload)
+
+            if res.status_code != 202:
+                return Response({"error": "Không thể tạo volume"}, status=res.status_code)
+
+            return Response(res.json(), status=202)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def put(self, request, volume_id):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            project_id = request.headers.get("X-Project-Id")
+
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            name = request.data.get("name")
+            description = request.data.get("description")
+
+            payload = {
+                "volume": {
+                    "name": name
+                }
+            }
+
+            if description:
+                payload["volume"]["description"] = description
+
+            url = f"{URL_AUTH}/volume/v3/{project_id}/volumes/{volume_id}"
+            res = requests.put(url, headers=headers, json=payload)
+
+            if res.status_code != 200:
+                return Response({"error": "Không thể cập nhật volume"}, status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def delete(self, request, volume_id):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            project_id = request.headers.get("X-Project-Id")
+
+            headers = {
+                "X-Auth-Token": token
+            }
+
+            url = f"{URL_AUTH}/volume/v3/{project_id}/volumes/{volume_id}"
+            res = requests.delete(url, headers=headers)
+
+            if res.status_code != 202:
+                return Response({"error": "Không thể xoá volume"}, status=res.status_code)
+
+            return Response({"message": "Xoá volume thành công"}, status=202)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
