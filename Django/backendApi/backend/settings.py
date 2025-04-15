@@ -56,6 +56,17 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'backend.urls'
 
+CORS_ALLOW_ALL_ORIGINS = True
+
+CORS_ALLOW_CREDENTIALS = True  # Cho phép gửi credentials
+
+# Thêm các headers cần thiết
+CORS_ALLOW_HEADERS = [
+    'x-auth-token',
+    'content-type',
+    'authorization',
+]
+
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
 ]
