@@ -169,7 +169,7 @@ class InstancesAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
-    def put(self, request, server_id):
+    def put(self, request, id):
         try:
             token = request.headers.get("X-Auth-Token")
             headers = {
@@ -185,7 +185,7 @@ class InstancesAPIView(APIView):
                 }
             }
 
-            NOVA_URL = f"{URL_AUTH}/compute/v2.1/servers/{server_id}"
+            NOVA_URL = f"{URL_AUTH}/compute/v2.1/servers/{id}"
             res = requests.put(NOVA_URL, headers=headers, json=payload)
 
             if res.status_code != 200:
@@ -196,14 +196,14 @@ class InstancesAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
-    def delete(self, request, server_id):
+    def delete(self, request, id):
         try:
             token = request.headers.get("X-Auth-Token")
             headers = {
                 "X-Auth-Token": token
             }
 
-            NOVA_URL = f"{URL_AUTH}/compute/v2.1/servers/{server_id}"
+            NOVA_URL = f"{URL_AUTH}/compute/v2.1/servers/{id}"
             res = requests.delete(NOVA_URL, headers=headers)
 
             if res.status_code != 204:
@@ -378,7 +378,7 @@ class NetworkAPIView(APIView):
         headers = {"X-Auth-Token": token}
 
         try:
-            url = f"{f"{URL_AUTH}:9696/networking/v2.0/networks"}/{network_id}"
+            url = f"{URL_AUTH}:9696/networking/v2.0/networks/{network_id}"
             res = requests.delete(url, headers=headers)
 
             if res.status_code != 204:
