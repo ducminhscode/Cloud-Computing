@@ -104,7 +104,7 @@ class LoginKeystone(APIView):
 
 
 class InstancesAPIView(APIView):
-    def get(self, request):
+    def get(self, request, id=None):
         try:
             # Lấy token admin
             token = request.headers.get("X-Auth-Token")
@@ -114,18 +114,15 @@ class InstancesAPIView(APIView):
                 "Content-Type": "application/json"
             }
 
-            NOVA_URL = f"{URL_AUTH}/compute/v2.1/servers/detail"
-            res = requests.get(NOVA_URL, headers=headers)
+            if id:
+                url = f"{URL_AUTH}/compute/v2.1/servers/{id}"
+                res = requests.get(url, headers=headers)
+            else:
+                res = requests.get(f"{URL_AUTH}/compute/v2.1/servers/detail", headers=headers)
+
             if res.status_code != 200:
                 return Response({"error": "Không lấy được danh sách instances"}, status=res.status_code)
-
-            all_servers = res.json().get("servers", [])
-            active_servers = [server for server in all_servers if server.get("status") == "ACTIVE"]
-
-            return Response({
-                "active_servers": active_servers,
-                "total_active": len(active_servers)
-            })
+            return Response(res.json(), status=200)
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
