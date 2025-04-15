@@ -141,14 +141,19 @@ class InstancesAPIView(APIView):
             name = request.data.get("name")
             image_ref = request.data.get("imageRef")
             flavor_ref = request.data.get("flavorRef")
-            network_id = request.data.get("network_id")
+            network_id = request.data.get("network_id", [])
+
+            if not all([name, image_ref, flavor_ref, network_id]):
+                return Response({"error": "Thiếu thông tin để tạo instance"}, status=400)
+
+            networks = [{"uuid": net_id} for net_id in network_id]
 
             payload = {
                 "server": {
                     "name": name,
                     "imageRef": image_ref,
                     "flavorRef": flavor_ref,
-                    "networks": [{"uuid": network_id}]
+                    "networks": networks
                 }
             }
 
@@ -156,7 +161,10 @@ class InstancesAPIView(APIView):
             res = requests.post(NOVA_URL, headers=headers, json=payload)
 
             if res.status_code not in [200, 202]:
-                return Response({"error": "Không thể tạo instance"}, status=res.status_code)
+                return Response({
+                    "error": "Không thể tạo instance",
+                    "details": res.json()
+                }, status=res.status_code)
 
             return Response(res.json(), status=res.status_code)
 
