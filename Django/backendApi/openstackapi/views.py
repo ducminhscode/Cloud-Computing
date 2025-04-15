@@ -8,7 +8,7 @@ class LoginKeystone(APIView):
     def post(self, request):
         username = request.data.get("username")
         password = request.data.get("password")
-        keystone_url = f"{URL_AUTH}identity/v3"  # sửa IP cho đúng
+        keystone_url = f"{URL_AUTH}/identity/v3"  # sửa IP cho đúng
 
         # Bước 1: Lấy unscoped token
         unscoped_payload = {
@@ -113,7 +113,7 @@ class InstancesAPIView(APIView):
                 "Content-Type": "application/json"
             }
 
-            NOVA_URL = f"{URL_AUTH}compute/v2.1/servers"
+            NOVA_URL = f"{URL_AUTH}/compute/v2.1/servers"
             res = requests.get(NOVA_URL, headers=headers)
             if res.status_code != 200:
                 return Response({"error": "Không lấy được danh sách instances"}, status=res.status_code)
@@ -152,7 +152,7 @@ class InstancesAPIView(APIView):
                 }
             }
 
-            NOVA_URL = f"{URL_AUTH}compute/v2.1/servers"
+            NOVA_URL = f"{URL_AUTH}/compute/v2.1/servers"
             res = requests.post(NOVA_URL, headers=headers, json=payload)
 
             if res.status_code not in [200, 202]:
@@ -179,7 +179,7 @@ class InstancesAPIView(APIView):
                 }
             }
 
-            NOVA_URL = f"{URL_AUTH}compute/v2.1/servers/{server_id}"
+            NOVA_URL = f"{URL_AUTH}/compute/v2.1/servers/{server_id}"
             res = requests.put(NOVA_URL, headers=headers, json=payload)
 
             if res.status_code != 200:
@@ -197,7 +197,7 @@ class InstancesAPIView(APIView):
                 "X-Auth-Token": token
             }
 
-            NOVA_URL = f"{URL_AUTH}compute/v2.1/servers/{server_id}"
+            NOVA_URL = f"{URL_AUTH}/compute/v2.1/servers/{server_id}"
             res = requests.delete(NOVA_URL, headers=headers)
 
             if res.status_code != 204:
@@ -209,7 +209,7 @@ class InstancesAPIView(APIView):
             return Response({"error": str(e)}, status=500)
 
 
-GLANCE_URL = f"{URL_AUTH}image/v2/images"  # sửa theo IP OpenStack
+GLANCE_URL = f"{URL_AUTH}/image/v2/images"  # sửa theo IP OpenStack
 class ImageAPIView(APIView):
 
     def get(self, request, image_id=None):
@@ -278,3 +278,69 @@ class ImageAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
+
+class NetworkAPIView(APIView):
+
+    def get(self, request, network_id=None):
+        token = request.headers.get("X-Auth-Token")
+        headers = {"X-Auth-Token": token}
+
+        try:
+            if network_id:
+                url = f"{URL_AUTH}:9696/networking/v2.0/networks/{network_id}"
+                res = requests.get(url, headers= headers)
+            else:
+                res = requests.get(f"{URL_AUTH}:9696/networking/v2.0/networks/", headers=headers)
+
+            if res.status_code != 200:
+                return Response({"error": "Không thể lấy danh sách network"}, status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+
+    def post(self, request):
+        token = request.headers.get("X-Auth-Token")
+        headers = {
+            "X-Auth-Token": token,
+            "Content-Type": "application/json"
+        }
+
+        try:
+            network_name = request.data.get("name")
+            admin_state_up = request.data.get("admin_state_up", True)
+
+            payload = {
+                "network": {
+                    "name": network_name,
+                    "admin_state_up": admin_state_up
+                }
+            }
+
+            res = requests.post(f"{URL_AUTH}:9696/networking/v2.0/networks", headers=headers, json=payload)
+
+            if res.status_code != 201:
+                return Response({"error": "Không thể tạo network"}, status=res.status_code)
+
+            return Response(res.json(), status=201)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def delete(self, request, network_id):
+        token = request.headers.get("X-Auth-Token")
+        headers = {"X-Auth-Token": token}
+
+        try:
+            url = f"{f"{URL_AUTH}:9696/networking/v2.0/networks"}/{network_id}"
+            res = requests.delete(url, headers=headers)
+
+            if res.status_code != 204:
+                return Response({"error": "Không thể xoá network"}, status=res.status_code)
+
+            return Response({"message": "Xoá network thành công"}, status=204)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
