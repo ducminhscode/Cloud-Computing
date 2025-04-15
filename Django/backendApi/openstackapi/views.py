@@ -2,17 +2,13 @@ import requests
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-
-import requests
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
+from backend.settings import URL_AUTH
 
 class LoginKeystone(APIView):
     def post(self, request):
         username = request.data.get("username")
         password = request.data.get("password")
-        keystone_url = "http://192.168.1.20/identity/v3"  # sửa IP cho đúng
+        keystone_url = f"{URL_AUTH}identity/v3"  # sửa IP cho đúng
 
         # Bước 1: Lấy unscoped token
         unscoped_payload = {
@@ -117,7 +113,7 @@ class InstancesAPIView(APIView):
                 "Content-Type": "application/json"
             }
 
-            NOVA_URL = "http://192.168.1.20/compute/v2.1/servers"
+            NOVA_URL = f"{URL_AUTH}compute/v2.1/servers"
             res = requests.get(NOVA_URL, headers=headers)
             if res.status_code != 200:
                 return Response({"error": "Không lấy được danh sách instances"}, status=res.status_code)
@@ -156,7 +152,7 @@ class InstancesAPIView(APIView):
                 }
             }
 
-            NOVA_URL = "http://192.168.1.20/compute/v2.1/servers"
+            NOVA_URL = f"{URL_AUTH}compute/v2.1/servers"
             res = requests.post(NOVA_URL, headers=headers, json=payload)
 
             if res.status_code not in [200, 202]:
@@ -183,7 +179,7 @@ class InstancesAPIView(APIView):
                 }
             }
 
-            NOVA_URL = f"http://192.168.1.20/compute/v2.1/servers/{server_id}"
+            NOVA_URL = f"{URL_AUTH}compute/v2.1/servers/{server_id}"
             res = requests.put(NOVA_URL, headers=headers, json=payload)
 
             if res.status_code != 200:
@@ -201,7 +197,7 @@ class InstancesAPIView(APIView):
                 "X-Auth-Token": token
             }
 
-            NOVA_URL = f"http://192.168.1.20/compute/v2.1/servers/{server_id}"
+            NOVA_URL = f"{URL_AUTH}compute/v2.1/servers/{server_id}"
             res = requests.delete(NOVA_URL, headers=headers)
 
             if res.status_code != 204:
@@ -213,7 +209,7 @@ class InstancesAPIView(APIView):
             return Response({"error": str(e)}, status=500)
 
 
-GLANCE_URL = "http://192.168.1.20/image/v2/images"  # sửa theo IP OpenStack
+GLANCE_URL = f"{URL_AUTH}image/v2/images"  # sửa theo IP OpenStack
 class ImageAPIView(APIView):
 
     def get(self, request, image_id=None):
