@@ -316,6 +316,31 @@ class InstancesAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
+class FlavorAPIView(APIView):
+    def get(self, request):
+        token = request.headers.get("X-Auth-Token")
+
+        if not token:
+            return Response({"error": "Thiếu X-Auth-Token"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        headers = {
+            "X-Auth-Token": token,
+            "Content-Type": "application/json"
+        }
+
+        try:
+            url = f"{URL_AUTH}/compute/v2.1/flavors/detail"
+            res = requests.get(url, headers=headers)
+
+            if res.status_code != 200:
+                return Response({"error": "Không thể lấy danh sách flavor"}, status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+
 class NetworkAPIView(APIView):
 
     def get(self, request, network_id=None):
@@ -534,116 +559,120 @@ class SubnetAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
-# class PortAPIView(APIView):
-#     def get(self, request, network_id=None):
-#         token = request.headers.get("X-Auth-Token")
-#         headers = {"X-Auth-Token": token}
-#
-#         try:
-#             if network_id:
-#                 url = f"{URL_AUTH}:9696/networking/v2.0/ports?network_id={network_id}"
-#             else:
-#                 url = f"{URL_AUTH}:9696/v2.0/ports"
-#
-#             res = requests.get(url, headers=headers)
-#
-#             if res.status_code != 200:
-#                 return Response({"error": "Không thể lấy thông tin port"}, status=res.status_code)
-#
-#             return Response(res.json(), status=200)
-#
-#         except Exception as e:
-#             return Response({"error": str(e)}, status=500)
-#
-#     def post(self, request):
-#         token = request.headers.get("X-Auth-Token")
-#         headers = {
-#             "X-Auth-Token": token,
-#             "Content-Type": "application/json"
-#         }
-#
-#         try:
-#             network_id = request.data.get("network_id")
-#             name = request.data.get("name")
-#             fixed_ips = request.data.get("fixed_ips")  # optional: [{"subnet_id": "...", "ip_address": "..."}]
-#             device_id = request.data.get("device_id")  # optional
-#
-#             if not network_id:
-#                 return Response({"error": "Thiếu network_id"}, status=400)
-#
-#             payload = {
-#                 "port": {
-#                     "network_id": network_id
-#                 }
-#             }
-#
-#             if name:
-#                 payload["port"]["name"] = name
-#             if fixed_ips:
-#                 payload["port"]["fixed_ips"] = fixed_ips
-#             if device_id:
-#                 payload["port"]["device_id"] = device_id
-#
-#             url = f"{URL_AUTH}:9696/v2.0/ports"
-#             res = requests.post(url, headers=headers, json=payload)
-#
-#             if res.status_code != 201:
-#                 return Response({"error": "Không thể tạo port", "details": res.json()}, status=res.status_code)
-#
-#             return Response(res.json(), status=201)
-#
-#         except Exception as e:
-#             return Response({"error": str(e)}, status=500)
-#
-#     def put(self, request, port_id):
-#         token = request.headers.get("X-Auth-Token")
-#         headers = {
-#             "X-Auth-Token": token,
-#             "Content-Type": "application/json"
-#         }
-#
-#         try:
-#             name = request.data.get("name")
-#             fixed_ips = request.data.get("fixed_ips")
-#             device_id = request.data.get("device_id")
-#
-#             payload = {"port": {}}
-#             if name:
-#                 payload["port"]["name"] = name
-#             if fixed_ips:
-#                 payload["port"]["fixed_ips"] = fixed_ips
-#             if device_id:
-#                 payload["port"]["device_id"] = device_id
-#
-#             if not payload["port"]:
-#                 return Response({"error": "Không có thông tin cập nhật"}, status=400)
-#
-#             url = f"{URL_AUTH}:9696/v2.0/ports/{port_id}"
-#             res = requests.put(url, headers=headers, json=payload)
-#
-#             if res.status_code != 200:
-#                 return Response({"error": "Không thể cập nhật port", "details": res.json()}, status=res.status_code)
-#
-#             return Response(res.json(), status=200)
-#
-#         except Exception as e:
-#             return Response({"error": str(e)}, status=500)
-#
-#     def delete(self, request, port_id):
-#         token = request.headers.get("X-Auth-Token")
-#         headers = {"X-Auth-Token": token}
-#
-#         try:
-#             url = f"{URL_AUTH}:9696/v2.0/ports/{port_id}"
-#             res = requests.delete(url, headers=headers)
-#
-#             if res.status_code != 204:
-#                 return Response({"error": "Không thể xoá port"}, status=res.status_code)
-#
-#             return Response({"message": "Xoá port thành công"}, status=204)
-#
-#         except Exception as e:
-#             return Response({"error": str(e)}, status=500)
+class PortAPIView(APIView):
+    def get(self, request, network_id):
+        token = request.headers.get("X-Auth-Token")
+        headers = {"X-Auth-Token": token}
+
+        try:
+            url = f"{URL_AUTH}:9696/networking/v2.0/ports?network_id={network_id}"
+            res = requests.get(url, headers=headers)
+
+            if res.status_code != 200:
+                return Response({"error": "Không thể lấy thông tin port"}, status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def post(self, request, network_id=None):
+        token = request.headers.get("X-Auth-Token")
+        headers = {
+            "X-Auth-Token": token,
+            "Content-Type": "application/json"
+        }
+
+        try:
+            name = request.data.get("name")
+            admin_state_up = request.data.get('admin_state_up', True)
+            fixed_ips = request.data.get("fixed_ips")  # optional: [{"subnet_id": "...", "ip_address": "..."}]
+            device_id = request.data.get("device_id")
+            device_owner = request.data.get('device_owner')
+            security_groups = request.data.get('security_groups', [])
+
+            if not network_id:
+                return Response({"error": "Thiếu network_id"}, status=400)
+
+            payload = {
+                "port": {
+                    "network_id": network_id,
+                }
+            }
+
+            if name:
+                payload["port"]["name"] = name
+            if admin_state_up:
+                payload["port"]["admin_state_up"] = admin_state_up
+            if fixed_ips:
+                payload["port"]["fixed_ips"] = fixed_ips
+            if device_id:
+                payload["port"]["device_id"] = device_id
+            if device_owner:
+                payload["port"]["device_owner"] = device_owner
+            if security_groups:
+                payload["port"]["security_groups"] = security_groups
+
+            url = f"{URL_AUTH}:9696/networking/v2.0/ports?network_id={network_id}"
+            res = requests.post(url, headers=headers, json=payload)
+
+            if res.status_code != 201:
+                return Response({"error": "Không thể tạo port", "details": res.json()}, status=res.status_code)
+
+            return Response(res.json(), status=201)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def put(self, request, network_id):
+        token = request.headers.get("X-Auth-Token")
+        headers = {
+            "X-Auth-Token": token,
+            "Content-Type": "application/json"
+        }
+
+        try:
+            name = request.data.get("name")
+            admin_state_up = request.data.get('admin_state_up', True)
+            security_groups = request.data.get('security_groups', [])
+
+            payload = {"port": {}}
+            if name:
+                payload["port"]["name"] = name
+            if admin_state_up:
+                payload["port"]["admin_state_up"] = admin_state_up
+            if security_groups:
+                payload["port"]["security_groups"] = security_groups
+
+            if not payload["port"]:
+                return Response({"error": "Không có thông tin cập nhật"}, status=400)
+
+            url = f"{URL_AUTH}:9696/networking/v2.0/ports?network_id={network_id}"
+            res = requests.put(url, headers=headers, json=payload)
+
+            if res.status_code != 200:
+                return Response({"error": "Không thể cập nhật port", "details": res.json()}, status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def delete(self, request, network_id):
+        token = request.headers.get("X-Auth-Token")
+        headers = {"X-Auth-Token": token}
+
+        try:
+            url = f"{URL_AUTH}:9696/networking/v2.0/ports?network_id={network_id}"
+            res = requests.delete(url, headers=headers)
+
+            if res.status_code != 204:
+                return Response({"error": "Không thể xoá port"}, status=res.status_code)
+
+            return Response({"message": "Xoá port thành công"}, status=204)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
 
 class VolumeAPIView(APIView):
     def get(self, request, volume_id=None):
