@@ -9,6 +9,7 @@ export const endpoints = {
     'neutron': 'neutron/',
     'glance': 'glance/',
     'instances': 'instances/',
+    'register': 'register/',
 }
 
 export default axios.create({

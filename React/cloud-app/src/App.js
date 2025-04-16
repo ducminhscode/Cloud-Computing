@@ -10,6 +10,7 @@ import DashboardPage from "./pages/DashboardPage";
 import LoginPage from "./pages/LoginPage";
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
+import RegisterPage from "./pages/RegisterPage";
 
 // Custom route wrapper to protect routes
 const ProtectedRoute = ({ isLoggedIn, children }) => {
@@ -35,6 +36,7 @@ function App() {
 
                     {/* Use ProtectedRoute to handle access control */}
                     <Route path="/" element={<ProtectedRoute isLoggedIn={isLoggedIn}><HomePage /></ProtectedRoute>} />
+                    <Route path="/register" element={<RegisterPage />} />
                     <Route path="/service/compute" element={<ProtectedRoute isLoggedIn={isLoggedIn}><ComputePage /></ProtectedRoute>} />
                     <Route path="/service/networking" element={<ProtectedRoute isLoggedIn={isLoggedIn}><NetworkingPage /></ProtectedRoute>} />
                     <Route path="/service/storage" element={<ProtectedRoute isLoggedIn={isLoggedIn}><StoragePage /></ProtectedRoute>} />
