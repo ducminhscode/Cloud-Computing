@@ -191,15 +191,33 @@ class RegisterAPIView(APIView):
                     "email": email
                 }
             }
-
             response = requests.post(f"{keystone_url}/users", json=user_data, headers=headers)
 
             if response.status_code == 201:
-                return Response({
-                    "message": "Người dùng và project đã được tạo thành công.",
-                }, status=status.HTTP_201_CREATED)
-            else:
-                raise ValidationError(f"Không thể tạo người dùng. Lỗi: {response.text}")
+                user_data = response.json()
+                user_id = user_data["user"]["id"]
+
+                # Lấy role "member"
+                role_response = requests.get(f"{keystone_url}/roles?name=member", headers=headers)
+                if role_response.status_code == 200:
+                    roles = role_response.json().get("roles", [])
+                    if roles:
+                        role_id = roles[0]["id"]
+
+                        # Gán role cho user vào project
+                        assign_role_url = f"{keystone_url}/projects/{project_id}/users/{user_id}/roles/{role_id}"
+                        assign_response = requests.put(assign_role_url, headers=headers)
+
+                        if assign_response.status_code == 204:
+                            return Response({
+                                "message": "Người dùng và project đã được tạo, đã gán quyền thành công."
+                            }, status=status.HTTP_201_CREATED)
+                        else:
+                            raise ValidationError(f"Không thể gán quyền. Lỗi: {assign_response.text}")
+                    else:
+                        raise ValidationError("Không tìm thấy role 'member'")
+                else:
+                    raise ValidationError(f"Lỗi khi lấy role 'member': {role_response.text}")
 
         except requests.exceptions.RequestException as e:
             raise ValidationError(f"Lỗi kết nối với OpenStack Keystone: {str(e)}")

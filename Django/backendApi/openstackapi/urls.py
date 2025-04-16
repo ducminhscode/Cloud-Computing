@@ -5,6 +5,7 @@ from .views import LoginKeystone, InstancesAPIView, NetworkAPIView, VolumeAPIVie
 urlpatterns = [
     path("login/", LoginKeystone.as_view()),
     path("register/", RegisterAPIView.as_view()),
+
     path("instances/", InstancesAPIView.as_view()),
     path('instances/<str:id>/', InstancesAPIView.as_view(), name='instance_detail'),
 

@@ -19,8 +19,9 @@ export default function LoginPage({ onLogin }) {
                 password,
             });
 
-            const token = res.data.token;
-            localStorage.setItem("token", token);
+
+            localStorage.setItem("project_id", res.data.project_id);
+            localStorage.setItem("token", res.data.token);
             localStorage.setItem("username", res.data.user);
 
             if (onLogin) onLogin(); // cập nhật trạng thái đăng nhập
