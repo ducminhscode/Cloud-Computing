@@ -18,9 +18,9 @@ export default function RegisterPage() {
 
         try {
             await Apis.post(endpoints["register"], {
-                username,
-                password,
-                email
+                "username": username,
+                "password":password,
+                "email": email
             });
 
             setSuccess("Đăng ký thành công! Bạn có thể đăng nhập ngay bây giờ.");
