@@ -61,13 +61,31 @@ export default function LoginPage({ onLogin }) {
 
                     <button
                         type="submit"
-                        className="w-full py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200"
+                        className="w-full py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 mb-4"
                     >
                         Đăng nhập
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => navigate("/register")}
+                        className="w-full py-3 bg-green-600 text-white font-semibold rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition duration-200"
+                    >
+                        Đăng ký tài khoản mới
                     </button>
                 </form>
 
                 {error && <p className="mt-4 text-red-500 text-center font-semibold">{error}</p>}
+
+                <p className="mt-4 text-center text-gray-600">
+                    Chưa có tài khoản?{" "}
+                    <span 
+                        className="text-blue-600 cursor-pointer hover:underline"
+                        onClick={() => navigate("/register")}
+                    >
+                        Đăng ký ngay
+                    </span>
+                </p>
             </div>
         </div>
     );
