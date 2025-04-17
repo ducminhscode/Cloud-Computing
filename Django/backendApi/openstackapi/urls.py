@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import LoginKeystone, InstancesAPIView, NetworkAPIView, VolumeAPIView, SubnetAPIView, PortAPIView, \
-    FlavorAPIView, RegisterAPIView, SnapshotAPIView
+    FlavorAPIView, RegisterAPIView, SnapshotAPIView, ImageAPIView, SecurityGroupAPIView, KeyPairAPIView
 
 urlpatterns = [
     path("login/", LoginKeystone.as_view()),
@@ -9,10 +9,15 @@ urlpatterns = [
     path("instances/", InstancesAPIView.as_view()),
     path('instances/<str:id>/', InstancesAPIView.as_view(), name='instance_detail'),
 
+    path('images/', ImageAPIView.as_view()),
+
     path('flavors/', FlavorAPIView.as_view()),
 
     path('networks/', NetworkAPIView.as_view()),
     path('networks/<str:network_id>/', NetworkAPIView.as_view()),
+
+    path('security-groups/', SecurityGroupAPIView.as_view()),
+    path('key-pairs/', KeyPairAPIView.as_view()),
 
     path('subnets/', SubnetAPIView.as_view()),
     path('networks/<str:network_id>/subnets/', SubnetAPIView.as_view()),

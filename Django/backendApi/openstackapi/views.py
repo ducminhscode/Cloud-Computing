@@ -295,6 +295,7 @@ class InstancesAPIView(APIView):
                     "select_boot_source": select_boot_source,
                     "create_new_volume": create_new_volume,
                     "volume_size": volume_size,
+                    "delete_volume_instance": delete_volume_instance,
                     "source": source,
                     "flavor": flavor,
                     "networks": networks,
@@ -361,6 +362,113 @@ class InstancesAPIView(APIView):
                 return Response({"error": "Không thể xóa instance"}, status=res.status_code)
 
             return Response({"message": "Xóa instance thành công"}, status=204)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+class ImageAPIView(APIView):
+    def get(self, request):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            if not token:
+                return Response({"error": "Token không được cung cấp"}, status=401)
+
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            url = f"{URL_AUTH}/image/v2.0/images"
+            res = requests.get(url, headers=headers)
+
+            if res.status_code != 200:
+                return Response({"error": "Không lấy được danh sách image"}, status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+class SecurityGroupAPIView(APIView):
+    def get(self, request):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            if not token:
+                return Response({"error": "Token không được cung cấp"}, status=401)
+
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            url = f"{URL_AUTH}:9696/networking/v2.0/security-groups"
+            res = requests.get(url, headers=headers)
+
+            if res.status_code != 200:
+                return Response({"error": "Không lấy được danh sách security groups"}, status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+class KeyPairAPIView(APIView):
+    def get(self, request):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            if not token:
+                return Response({"error": "Token không được cung cấp"}, status=401)
+
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            url = f"{URL_AUTH}/compute/v2.1/os-keypairs"
+            res = requests.get(url, headers=headers)
+
+            if res.status_code != 200:
+                return Response({"error": "Không lấy được danh sách key pairs"}, status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def post(self, request):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            if not token:
+                return Response({"error": "Token không được cung cấp"}, status=401)
+
+            key_name = request.data.get("key_name")
+            key_type = request.data.get("key_type", "SSH Key")  # mặc định là "ssh"
+
+            if not key_name:
+                return Response({"error": "Thiếu tên key pair"}, status=400)
+
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            payload = {
+                "keypair": {
+                    "name": key_name,
+                    "type": key_type
+                }
+            }
+
+            url = f"{URL_AUTH}/compute/v2.1/os-keypairs"
+            res = requests.post(url, headers=headers, json=payload)
+
+            if res.status_code not in [200, 201]:
+                return Response({
+                    "error": "Không thể tạo key pair",
+                    "details": res.json()
+                }, status=res.status_code)
+
+            return Response(res.json(), status=res.status_code)
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
