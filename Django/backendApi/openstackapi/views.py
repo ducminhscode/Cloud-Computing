@@ -1,4 +1,5 @@
 import requests
+from celery.schedules import schedule
 from rest_framework.exceptions import ValidationError
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -257,21 +258,51 @@ class InstancesAPIView(APIView):
 
             # Lấy dữ liệu cần thiết từ request
             name = request.data.get("name")
-            image_ref = request.data.get("imageRef")
-            flavor_ref = request.data.get("flavorRef")
-            network_id = request.data.get("network_id", [])
+            description = request.data.get("description", "")
+            availability_zone = request.data.get("availability_zone", "nova")
+            count = request.data.get("count", 1)
 
-            if not all([name, image_ref, flavor_ref, network_id]):
+            select_boot_source = request.data.get("select_boot_source", "Image")
+            create_new_volume = request.data.get("create_new_volume", True)
+            volume_size = request.data.get("volume_size", 1)
+            delete_volume_instance = request.data.get("delete_volume_instance", False)
+            source = request.data.get("source")
+
+            flavor = request.data.get("flavor")
+
+            network = request.data.get("network", [])
+
+            security_group = request.data.get("security_group", [])
+
+            key_pair = request.data.get("key_name")
+
+            customization_script = request.data.get("customization_script", "")
+            disk_partition = request.data.get("disk_partition", "Automatic")
+            configuration_drive = request.data.get("configuration_drive", False)
+
+            if not all([name, source, flavor, network]):
                 return Response({"error": "Thiếu thông tin để tạo instance"}, status=400)
 
-            networks = [{"uuid": net_id} for net_id in network_id]
+            networks = [{"uuid": net_id} for net_id in network]
+            security_groups = [{"sg": sg_id} for sg_id in security_group]
 
             payload = {
                 "server": {
                     "name": name,
-                    "imageRef": image_ref,
-                    "flavorRef": flavor_ref,
-                    "networks": networks
+                    "description": description,
+                    "availability_zone": availability_zone,
+                    "count": count,
+                    "select_boot_source": select_boot_source,
+                    "create_new_volume": create_new_volume,
+                    "volume_size": volume_size,
+                    "source": source,
+                    "flavor": flavor,
+                    "networks": networks,
+                    "security_groups": security_groups,
+                    "key_pair": key_pair,
+                    "customization_script": customization_script,
+                    "disk_partition": disk_partition,
+                    "configuration_drive": configuration_drive,
                 }
             }
 
@@ -800,3 +831,115 @@ class VolumeAPIView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+
+class SnapshotAPIView(APIView):
+    def get(self, request, snapshot_id=None):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            project_id = request.headers.get("X-Project-Id")
+
+            headers = {
+                "X-Auth-Token": token
+            }
+
+            if snapshot_id:
+                url = f"{URL_AUTH}/volume/v3/{project_id}/snapshots/{snapshot_id}"
+            else:
+                url = f"{URL_AUTH}/volume/v3/{project_id}/snapshots/detail"
+
+            res = requests.get(url, headers=headers)
+
+            if res.status_code != 200:
+                return Response({"error": "Không thể lấy thông tin snapshot"}, status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def post(self, request):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            project_id = request.headers.get("X-Project-Id")
+
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            name = request.data.get("name")
+            volume_id = request.data.get("volume_id")
+            description = request.data.get("description", "")
+            force = request.data.get("force", True)  # bắt buộc True nếu volume đang dùng
+
+            payload = {
+                "snapshot": {
+                    "name": name,
+                    "volume_id": volume_id,
+                    "description": description,
+                    "force": force
+                }
+            }
+
+            url = f"{URL_AUTH}/volume/v3/{project_id}/snapshots"
+            res = requests.post(url, headers=headers, json=payload)
+
+            if res.status_code != 202:
+                return Response({"error": "Không thể tạo snapshot"}, status=res.status_code)
+
+            return Response(res.json(), status=202)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def put(self, request, snapshot_id):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            project_id = request.headers.get("X-Project-Id")
+
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            name = request.data.get("name")
+            description = request.data.get("description")
+
+            payload = {
+                "snapshot": {
+                    "name": name,
+                    "description": description
+                }
+            }
+
+            url = f"{URL_AUTH}/volume/v3/{project_id}/snapshots/{snapshot_id}"
+            res = requests.put(url, headers=headers, json=payload)
+
+            if res.status_code != 200:
+                return Response({"error": "Không thể cập nhật snapshot"}, status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def delete(self, request, snapshot_id):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            project_id = request.headers.get("X-Project-Id")
+
+            headers = {
+                "X-Auth-Token": token
+            }
+
+            url = f"{URL_AUTH}/volume/v3/{project_id}/snapshots/{snapshot_id}"
+            res = requests.delete(url, headers=headers)
+
+            if res.status_code != 202:
+                return Response({"error": "Không thể xoá snapshot"}, status=res.status_code)
+
+            return Response({"message": "Xoá snapshot thành công"}, status=202)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
