@@ -10,6 +10,7 @@ export const endpoints = {
     'glance': 'glance/',
     'instances': 'instances/',
     'register': 'register/',
+    'networks': 'networks/',
 }
 
 export default axios.create({

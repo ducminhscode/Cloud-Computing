@@ -65,6 +65,7 @@ CORS_ALLOW_HEADERS = [
     'x-auth-token',
     'content-type',
     'authorization',
+    'x-project-id',
 ]
 
 CORS_ALLOWED_ORIGINS = [
