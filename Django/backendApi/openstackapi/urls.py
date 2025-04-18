@@ -18,6 +18,7 @@ urlpatterns = [
 
     path('security-groups/', SecurityGroupAPIView.as_view()),
     path('key-pairs/', KeyPairAPIView.as_view()),
+    path('key-pairs/<str:key_name>/', KeyPairAPIView.as_view()),
 
     path('subnets/', SubnetAPIView.as_view()),
     path('networks/<str:network_id>/subnets/', SubnetAPIView.as_view()),

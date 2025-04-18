@@ -451,6 +451,34 @@ class KeyPairAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
+    def delete(self, request, key_name):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            if not token:
+                return Response({"error": "Token không được cung cấp"}, status=401)
+
+            if not key_name:
+                return Response({"error": "Thiếu tên key pair để xóa"}, status=400)
+
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            url = f"{URL_AUTH}/compute/v2.1/os-keypairs/{key_name}"
+            res = requests.delete(url, headers=headers)
+
+            if res.status_code != 202:
+                return Response({
+                    "error": "Không thể xóa key pair",
+                    "details": res.json() if res.content else {}
+                }, status=res.status_code)
+
+            return Response({"message": f"Key pair '{key_name}' đã được xóa thành công."}, status=202)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
 
 class FlavorAPIView(APIView):
     def get(self, request):
