@@ -1153,3 +1153,75 @@ class VolumeSnapshotAPIView(APIView):
 #
 #         except Exception as e:
 #             return Response({"error": str(e)}, status=500)
+
+class RestoreVolumeFromSnapshotAPIView(APIView):
+    def post(self, request):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            project_id = request.data.get("project_id")
+            snapshot_id = request.data.get("snapshot_id")
+            new_volume_name = request.data.get("name", "restored-volume")
+
+            if not all([project_id, snapshot_id]):
+                return Response({"error": "Thiếu project_id hoặc snapshot_id"}, status=400)
+
+            url = f"{URL_AUTH}/volume/v3/{project_id}/volumes"
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            payload = {
+                "volume": {
+                    "name": new_volume_name,
+                    "snapshot_id": snapshot_id
+                }
+            }
+
+            res = requests.post(url, headers=headers, json=payload)
+
+            if res.status_code not in [200, 202]:
+                return Response({"error": "Không thể khôi phục volume từ snapshot", "details": res.json()}, status=res.status_code)
+
+            return Response(res.json(), status=res.status_code)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+
+class RestoreInstanceFromSnapshotAPIView(APIView):
+    def post(self, request):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            snapshot_image_id = request.data.get("image_id")
+            flavor_id = request.data.get("flavor_id")
+            network_ids = request.data.get("networks", [])
+            name = request.data.get("name", "restored-instance")
+
+            if not all([snapshot_image_id, flavor_id, network_ids]):
+                return Response({"error": "Thiếu thông tin tạo instance"}, status=400)
+
+            url = f"{URL_AUTH}/compute/v2.1/servers"
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            payload = {
+                "server": {
+                    "name": name,
+                    "imageRef": snapshot_image_id,
+                    "flavorRef": flavor_id,
+                    "networks": [{"uuid": net_id} for net_id in network_ids]
+                }
+            }
+
+            res = requests.post(url, headers=headers, json=payload)
+
+            if res.status_code not in [200, 202]:
+                return Response({"error": "Không thể khôi phục instance từ snapshot", "details": res.json()}, status=res.status_code)
+
+            return Response(res.json(), status=res.status_code)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)

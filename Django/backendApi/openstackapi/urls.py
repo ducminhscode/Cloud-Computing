@@ -2,7 +2,8 @@ from tkinter import Image
 
 from django.urls import path
 from .views import LoginKeystone, InstancesAPIView, NetworkAPIView, VolumeAPIView, SubnetAPIView, PortAPIView, \
-    FlavorAPIView, RegisterAPIView, SnapshotAPIView, ImagesAPIView, SecurityGroupAPIView, KeyPairAPIView
+    FlavorAPIView, RegisterAPIView, SnapshotAPIView, ImagesAPIView, SecurityGroupAPIView, KeyPairAPIView, \
+    RestoreInstanceFromSnapshotAPIView, RestoreVolumeFromSnapshotAPIView
 
 urlpatterns = [
     path("login/", LoginKeystone.as_view()),
@@ -30,7 +31,8 @@ urlpatterns = [
     path('snapshots/', SnapshotAPIView.as_view()),
     path('snapshots/<str:snapshot_id>/', SnapshotAPIView.as_view()),
 
-    path('image/', ImagesAPIView.as_view())
+    path('image/', ImagesAPIView.as_view()),
 
-
+    path('snapshots-restore-instance/', RestoreInstanceFromSnapshotAPIView.as_view()),
+    path('snapshots-restore-volume/', RestoreVolumeFromSnapshotAPIView.as_view())
 ]
