@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Apis, { endpoints } from '../configs/Apis';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -17,7 +16,6 @@ const NetworkingPage = () => {
         admin_state_up: true,
         shared: false
     });
-    const navigate = useNavigate();
 
     // Fetch all networks
     const fetchNetworks = async () => {

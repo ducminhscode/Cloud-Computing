@@ -11,6 +11,12 @@ export const endpoints = {
     'instances': 'instances/',
     'register': 'register/',
     'networks': 'networks/',
+    'image':'image/',
+    'flavors':'flavors/',
+    'snapshots':'snapshots/',
+    'volumes':'volumes/',
+    'snapshot-instance': 'snapshot-instance/',
+    'snapshot-volume': 'snapshot-volume/',
 }
 
 export default axios.create({

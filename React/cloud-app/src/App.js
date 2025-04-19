@@ -5,12 +5,13 @@ import HomePage from "./pages/HomePage";
 import ComputePage from "./pages/ComputePage";
 import NetworkingPage from "./pages/NetworkingPage";
 import StoragePage from "./pages/StoragePage";
-import IdentityPage from "./pages/IdentityPage";
-import DashboardPage from "./pages/DashboardPage";
 import LoginPage from "./pages/LoginPage";
 import Header from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import RegisterPage from "./pages/RegisterPage";
+import ImagePage from "./pages/ImagePage";
+import FlavorPage from "./pages/FlavorPage";
+import SnapshotPage from "./pages/SnapshotPage";
 
 // Custom route wrapper to protect routes
 const ProtectedRoute = ({ isLoggedIn, children }) => {
@@ -40,8 +41,9 @@ function App() {
                     <Route path="/service/compute" element={<ProtectedRoute isLoggedIn={isLoggedIn}><ComputePage /></ProtectedRoute>} />
                     <Route path="/service/networking" element={<ProtectedRoute isLoggedIn={isLoggedIn}><NetworkingPage /></ProtectedRoute>} />
                     <Route path="/service/storage" element={<ProtectedRoute isLoggedIn={isLoggedIn}><StoragePage /></ProtectedRoute>} />
-                    <Route path="/service/identity" element={<ProtectedRoute isLoggedIn={isLoggedIn}><IdentityPage /></ProtectedRoute>} />
-                    <Route path="/service/dashboard" element={<ProtectedRoute isLoggedIn={isLoggedIn}><DashboardPage /></ProtectedRoute>} />
+                    <Route path="/service/images" element={<ProtectedRoute isLoggedIn={isLoggedIn}><ImagePage /></ProtectedRoute>} />
+                    <Route path="/service/flavors" element={<ProtectedRoute isLoggedIn={isLoggedIn}><FlavorPage /></ProtectedRoute>} />
+                    <Route path="/service/snapshots" element={<ProtectedRoute isLoggedIn={isLoggedIn}><SnapshotPage /></ProtectedRoute>} />
                 </Routes>
             </div>
 

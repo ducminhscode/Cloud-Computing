@@ -1117,42 +1117,42 @@ class VolumeSnapshotAPIView(APIView):
             return Response({"error": str(e)}, status=500)
 #
 #
-# class InstanceSnapshotAPIView(APIView):
-#     def post(self, request):
-#         try:
-#             token = request.headers.get("X-Auth-Token")
-#             server_id = request.data.get("server_id")
-#             snapshot_name = request.data.get("name", "instance-snapshot")
-#
-#             if not server_id:
-#                 return Response({"error": "Thiếu server_id"}, status=400)
-#
-#             url = f"{URL_AUTH}/compute/v2.1/servers/{server_id}/action"
-#             headers = {
-#                 "X-Auth-Token": token,
-#                 "Content-Type": "application/json"
-#             }
-#
-#             payload = {
-#                 "createImage": {
-#                     "name": snapshot_name,
-#                     "metadata": {}
-#                 }
-#             }
-#
-#             res = requests.post(url, headers=headers, json=payload)
-#
-#             if res.status_code not in [200, 202]:
-#                 return Response({"error": "Không thể tạo snapshot từ instance", "details": res.json()}, status=res.status_code)
-#
-#             location = res.headers.get("Location")
-#             return Response({
-#                 "message": "Snapshot instance đang được tạo",
-#                 "image_url": location
-#             }, status=res.status_code)
-#
-#         except Exception as e:
-#             return Response({"error": str(e)}, status=500)
+class InstanceSnapshotAPIView(APIView):
+    def post(self, request):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            server_id = request.data.get("server_id")
+            snapshot_name = request.data.get("name", "instance-snapshot")
+
+            if not server_id:
+                return Response({"error": "Thiếu server_id"}, status=400)
+
+            url = f"{URL_AUTH}/compute/v2.1/servers/{server_id}/action"
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            payload = {
+                "createImage": {
+                    "name": snapshot_name,
+                    "metadata": {}
+                }
+            }
+
+            res = requests.post(url, headers=headers, json=payload)
+
+            if res.status_code not in [200, 202]:
+                return Response({"error": "Không thể tạo snapshot từ instance", "details": res.json()}, status=res.status_code)
+
+            location = res.headers.get("Location")
+            return Response({
+                "message": "Snapshot instance đang được tạo",
+                "image_url": location
+            }, status=res.status_code)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
 
 class RestoreVolumeFromSnapshotAPIView(APIView):
     def post(self, request):

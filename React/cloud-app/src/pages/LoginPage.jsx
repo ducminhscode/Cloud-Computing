@@ -18,6 +18,7 @@ export default function LoginPage({ onLogin }) {
                 username,
                 password,
             });
+            console.log(res.data.project_id);
 
 
             localStorage.setItem("project_id", res.data.project_id);
