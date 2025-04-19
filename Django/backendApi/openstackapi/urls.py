@@ -26,11 +26,11 @@ urlpatterns = [
     path('volumes/', VolumeAPIView.as_view()),
     path('volumes/<str:volume_id>/', VolumeAPIView.as_view()),
 
-    path("snapshot/volume/", VolumeSnapshotAPIView.as_view()),
-    path("snapshot/volume/<str:snapshot_id>/", VolumeSnapshotAPIView.as_view()),
+    path("snapshot-volume/", VolumeSnapshotAPIView.as_view()),
+    path("snapshot-volume/<str:snapshot_id>/", VolumeSnapshotAPIView.as_view()),
 
-    path("snapshot/instance/", InstanceSnapshotAPIView.as_view()),
-    path("snapshot/instance/<str:snapshot_id>/", InstanceSnapshotAPIView.as_view()),
+    path("snapshot-instance/", InstanceSnapshotAPIView.as_view()),
+    path("snapshot-instance/<str:snapshot_id>/", InstanceSnapshotAPIView.as_view()),
 
     path('image/', ImagesAPIView.as_view()),
 

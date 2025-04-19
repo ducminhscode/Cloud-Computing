@@ -257,9 +257,8 @@ class InstancesAPIView(APIView):
                 "Content-Type": "application/json"
             }
 
-            # Lấy dữ liệu cần thiết từ request
+            # Lấy dữ liệu từ request
             name = request.data.get("name")
-            description = request.data.get("description", "")
             availability_zone = request.data.get("availability_zone", "nova")
             count = request.data.get("count", 1)
 
@@ -270,43 +269,58 @@ class InstancesAPIView(APIView):
             source = request.data.get("source")
 
             flavor = request.data.get("flavor")
-
             network = request.data.get("network", [])
-
             security_group = request.data.get("security_group", [])
-
             key_pair = request.data.get("key_name")
-
-            customization_script = request.data.get("customization_script", "")
-            disk_partition = request.data.get("disk_partition", "Automatic")
-            configuration_drive = request.data.get("configuration_drive", False)
 
             if not all([name, source, flavor, network]):
                 return Response({"error": "Thiếu thông tin để tạo instance"}, status=400)
 
+            # Chuẩn bị các phần payload
             networks = [{"uuid": net_id} for net_id in network]
-            security_groups = [{"sg": sg_id} for sg_id in security_group]
+            security_groups = [{"name": sg_id} for sg_id in security_group]  # 'name' chứ không phải 'sg'
 
-            payload = {
-                "server": {
-                    "name": name,
-                    "description": description,
-                    "availability_zone": availability_zone,
-                    "count": count,
-                    "select_boot_source": select_boot_source,
-                    "create_new_volume": create_new_volume,
-                    "volume_size": volume_size,
-                    "delete_volume_instance": delete_volume_instance,
-                    "source": source,
-                    "flavor": flavor,
-                    "networks": networks,
-                    "security_groups": security_groups,
-                    "key_pair": key_pair,
-                    "customization_script": customization_script,
-                    "disk_partition": disk_partition,
-                    "configuration_drive": configuration_drive,
-                }
+            server_data = {
+                "name": name,
+                "flavorRef": flavor,
+                "networks": networks,
+                "availability_zone": availability_zone,
             }
+
+            if security_groups:
+                server_data["security_groups"] = security_groups
+
+            if key_pair:
+                server_data["key_name"] = key_pair
+
+            # Xử lý boot source
+            if select_boot_source == "Image" and not create_new_volume:
+                # Boot trực tiếp từ image
+                server_data["imageRef"] = source
+
+            elif select_boot_source == "Image" and create_new_volume:
+                # Boot từ image qua volume
+                server_data["block_device_mapping_v2"] = [{
+                    "boot_index": "0",
+                    "uuid": source,
+                    "source_type": "image",
+                    "destination_type": "volume",
+                    "volume_size": volume_size,
+                    "delete_on_termination": delete_volume_instance
+                }]
+            elif select_boot_source == "Volume":
+                # Boot từ volume có sẵn
+                server_data["block_device_mapping_v2"] = [{
+                    "boot_index": "0",
+                    "uuid": source,
+                    "source_type": "volume",
+                    "destination_type": "volume",
+                    "delete_on_termination": delete_volume_instance
+                }]
+            else:
+                return Response({"error": "Kiểu boot source không hợp lệ"}, status=400)
+
+            payload = {"server": server_data}
 
             NOVA_URL = f"{URL_AUTH}/compute/v2.1/servers"
             res = requests.post(NOVA_URL, headers=headers, json=payload)
@@ -1045,20 +1059,35 @@ class InstanceSnapshotAPIView(APIView):
     def get(self, request, snapshot_id=None):
         try:
             token = request.headers.get("X-Auth-Token")
-
-            headers = {"X-Auth-Token": token}
+            project_id = request.headers.get("X-Project-Id")  # cần thêm header này
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
 
             if snapshot_id:
                 url = f"{URL_AUTH}/image/v2/images/{snapshot_id}"
-            else:
-                url = f"{URL_AUTH}/image/v2/images?image_type=snapshot"
+                res = requests.get(url, headers=headers)
+                if res.status_code != 200:
+                    return Response({"error": "Không thể lấy thông tin snapshot instance"}, status=res.status_code)
+                return Response(res.json(), status=200)
 
+            url = f"{URL_AUTH}/image/v2/images"
             res = requests.get(url, headers=headers)
-
             if res.status_code != 200:
-                return Response({"error": "Không thể lấy thông tin snapshot instance"}, status=res.status_code)
+                return Response({"error": "Không thể lấy danh sách snapshot instance"}, status=res.status_code)
 
-            return Response(res.json(), status=200)
+            all_images = res.json().get("images", [])
+
+            # ✅ Lọc ảnh do người dùng tạo (cùng project), đang active, và có visibility private
+            snapshots = [
+                img for img in all_images
+                if img.get("owner") == project_id
+                   and img.get("status") == "active"
+                   and img.get("visibility") == "private"
+            ]
+
+            return Response({"snapshots": snapshots}, status=200)
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
