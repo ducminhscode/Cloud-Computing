@@ -47,7 +47,7 @@ const Header = ({ setIsLoggedIn }) => {
                         to="/"
                         className="hover:text-yellow-300 transition-transform duration-200 hover:scale-105"
                     >
-                        Home
+                        Trang chủ
                     </Link>
 
                     {/* Dropdown menu for services */}
@@ -64,7 +64,7 @@ const Header = ({ setIsLoggedIn }) => {
                         }}
                     >
                         <div className="flex items-center cursor-pointer hover:text-yellow-300 transition duration-200">
-                            Services <ChevronDown size={18} className="ml-1" />
+                            Dịch vụ <ChevronDown size={18} className="ml-1" />
                         </div>
                         {dropdownOpen && (
                             <div
@@ -96,7 +96,7 @@ const Header = ({ setIsLoggedIn }) => {
                 <div className="flex items-center space-x-4">
                     {isLoggedIn && (
                         <span className="hidden sm:block text-white text-base sm:text-lg">
-                            👋 Welcome,{" "}
+                            👋 Xin chào,{" "}
                             <strong className="text-yellow-300">
                                 {username || "User"}
                             </strong>
@@ -107,14 +107,14 @@ const Header = ({ setIsLoggedIn }) => {
                             onClick={handleLogout}
                             className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 shadow-md transition duration-300"
                         >
-                            <LogOut size={18} /> Sign Out
+                            <LogOut size={18} /> Đăng xuất
                         </button>
                     ) : (
                         <button
                             onClick={() => navigate("/login")}
                             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl flex items-center gap-2 shadow-md transition duration-300"
                         >
-                            <LogIn size={18} /> Sign In
+                            <LogIn size={18} /> Đăng nhập
                         </button>
                     )}
                 </div>
@@ -128,7 +128,7 @@ const Header = ({ setIsLoggedIn }) => {
                         onClick={() => setMenuOpen(false)}
                         className="block text-lg hover:text-yellow-300 transition"
                     >
-                        Home
+                        Trang chủ
                     </Link>
 
                     {/* Dropdown on mobile as expanded list */}
