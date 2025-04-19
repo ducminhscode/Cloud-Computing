@@ -942,118 +942,6 @@ class VolumeAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
-class SnapshotAPIView(APIView):
-    def get(self, request, snapshot_id=None):
-        try:
-            token = request.headers.get("X-Auth-Token")
-            project_id = request.headers.get("X-Project-Id")
-
-            headers = {
-                "X-Auth-Token": token
-            }
-
-            if snapshot_id:
-                url = f"{URL_AUTH}/volume/v3/{project_id}/snapshots/{snapshot_id}"
-            else:
-                url = f"{URL_AUTH}/volume/v3/{project_id}/snapshots/detail"
-
-            res = requests.get(url, headers=headers)
-
-            if res.status_code != 200:
-                return Response({"error": "Không thể lấy thông tin snapshot"}, status=res.status_code)
-
-            return Response(res.json(), status=200)
-
-        except Exception as e:
-            return Response({"error": str(e)}, status=500)
-
-    def post(self, request):
-        try:
-            token = request.headers.get("X-Auth-Token")
-            project_id = request.headers.get("X-Project-Id")
-
-            headers = {
-                "X-Auth-Token": token,
-                "Content-Type": "application/json"
-            }
-
-            name = request.data.get("name")
-            volume_id = request.data.get("volume_id")
-            description = request.data.get("description", "")
-            force = request.data.get("force", True)  # bắt buộc True nếu volume đang dùng
-
-            payload = {
-                "snapshot": {
-                    "name": name,
-                    "volume_id": volume_id,
-                    "description": description,
-                    "force": force
-                }
-            }
-
-            url = f"{URL_AUTH}/volume/v3/{project_id}/snapshots"
-            res = requests.post(url, headers=headers, json=payload)
-
-            if res.status_code != 202:
-                return Response({"error": "Không thể tạo snapshot"}, status=res.status_code)
-
-            return Response(res.json(), status=202)
-
-        except Exception as e:
-            return Response({"error": str(e)}, status=500)
-
-    def put(self, request, snapshot_id):
-        try:
-            token = request.headers.get("X-Auth-Token")
-            project_id = request.headers.get("X-Project-Id")
-
-            headers = {
-                "X-Auth-Token": token,
-                "Content-Type": "application/json"
-            }
-
-            name = request.data.get("name")
-            description = request.data.get("description")
-
-            payload = {
-                "snapshot": {
-                    "name": name,
-                    "description": description
-                }
-            }
-
-            url = f"{URL_AUTH}/volume/v3/{project_id}/snapshots/{snapshot_id}"
-            res = requests.put(url, headers=headers, json=payload)
-
-            if res.status_code != 200:
-                return Response({"error": "Không thể cập nhật snapshot"}, status=res.status_code)
-
-            return Response(res.json(), status=200)
-
-        except Exception as e:
-            return Response({"error": str(e)}, status=500)
-
-    def delete(self, request, snapshot_id):
-        try:
-            token = request.headers.get("X-Auth-Token")
-            project_id = request.headers.get("X-Project-Id")
-
-            headers = {
-                "X-Auth-Token": token
-            }
-
-            url = f"{URL_AUTH}/volume/v3/{project_id}/snapshots/{snapshot_id}"
-            res = requests.delete(url, headers=headers)
-
-            if res.status_code != 202:
-                return Response({"error": "Không thể xoá snapshot"}, status=res.status_code)
-
-            return Response({"message": "Xoá snapshot thành công"}, status=202)
-
-        except Exception as e:
-            return Response({"error": str(e)}, status=500)
-
-
 class ImagesAPIView(APIView):
     def get(self, request):
         try:
@@ -1077,57 +965,110 @@ class ImagesAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
-
 class VolumeSnapshotAPIView(APIView):
+    def get(self, request, snapshot_id=None):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            project_id = request.headers.get("X-Project-Id")
+
+            headers = {"X-Auth-Token": token}
+
+            if snapshot_id:
+                url = f"{URL_AUTH}/volume/v3/{project_id}/snapshots/{snapshot_id}"
+            else:
+                url = f"{URL_AUTH}/volume/v3/{project_id}/snapshots/detail"
+
+            res = requests.get(url, headers=headers)
+
+            if res.status_code != 200:
+                return Response({"error": "Không thể lấy thông tin snapshot volume"}, status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
     def post(self, request):
         try:
             token = request.headers.get("X-Auth-Token")
-            project_id = request.data.get("project_id")
-            volume_id = request.data.get("volume_id")
-            name = request.data.get("name", "volume-snapshot")
-            description = request.data.get("description", "")
-            force = request.data.get("force", True)
+            project_id = request.headers.get("X-Project-Id")
 
-            if not all([project_id, volume_id]):
-                return Response({"error": "Thiếu project_id hoặc volume_id"}, status=400)
-
-            url = f"{URL_AUTH}/volume/v3/{project_id}/snapshots"
             headers = {
                 "X-Auth-Token": token,
                 "Content-Type": "application/json"
             }
 
+            name = request.data.get("name")
+            volume_id = request.data.get("volume_id")
+            description = request.data.get("description", "")
+            force = request.data.get("force", True)
+
             payload = {
                 "snapshot": {
-                    "volume_id": volume_id,
                     "name": name,
+                    "volume_id": volume_id,
                     "description": description,
                     "force": force
                 }
             }
 
+            url = f"{URL_AUTH}/volume/v3/{project_id}/snapshots"
             res = requests.post(url, headers=headers, json=payload)
 
-            if res.status_code not in [200, 202]:
-                return Response({"error": "Không thể tạo snapshot volume", "details": res.json()}, status=res.status_code)
+            if res.status_code != 202:
+                return Response({"error": "Không thể tạo snapshot volume"}, status=res.status_code)
 
-            return Response(res.json(), status=res.status_code)
+            return Response(res.json(), status=202)
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
-#
-#
+
+    def delete(self, request, snapshot_id):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            project_id = request.headers.get("X-Project-Id")
+
+            headers = {"X-Auth-Token": token}
+
+            url = f"{URL_AUTH}/volume/v3/{project_id}/snapshots/{snapshot_id}"
+            res = requests.delete(url, headers=headers)
+
+            if res.status_code != 202:
+                return Response({"error": "Không thể xoá snapshot volume"}, status=res.status_code)
+
+            return Response({"message": "Xoá snapshot volume thành công"}, status=202)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
 class InstanceSnapshotAPIView(APIView):
+    def get(self, request, snapshot_id=None):
+        try:
+            token = request.headers.get("X-Auth-Token")
+
+            headers = {"X-Auth-Token": token}
+
+            if snapshot_id:
+                url = f"{URL_AUTH}/image/v2/images/{snapshot_id}"
+            else:
+                url = f"{URL_AUTH}/image/v2/images?image_type=snapshot"
+
+            res = requests.get(url, headers=headers)
+
+            if res.status_code != 200:
+                return Response({"error": "Không thể lấy thông tin snapshot instance"}, status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
     def post(self, request):
         try:
             token = request.headers.get("X-Auth-Token")
             server_id = request.data.get("server_id")
-            snapshot_name = request.data.get("name", "instance-snapshot")
+            name = request.data.get("name")
 
-            if not server_id:
-                return Response({"error": "Thiếu server_id"}, status=400)
-
-            url = f"{URL_AUTH}/compute/v2.1/servers/{server_id}/action"
             headers = {
                 "X-Auth-Token": token,
                 "Content-Type": "application/json"
@@ -1135,24 +1076,37 @@ class InstanceSnapshotAPIView(APIView):
 
             payload = {
                 "createImage": {
-                    "name": snapshot_name,
-                    "metadata": {}
+                    "name": name
                 }
             }
 
+            url = f"{URL_AUTH}/compute/v2.1/servers/{server_id}/action"
             res = requests.post(url, headers=headers, json=payload)
 
-            if res.status_code not in [200, 202]:
-                return Response({"error": "Không thể tạo snapshot từ instance", "details": res.json()}, status=res.status_code)
+            if res.status_code not in [202, 200]:
+                return Response({"error": "Không thể tạo snapshot instance"}, status=res.status_code)
 
-            location = res.headers.get("Location")
-            return Response({
-                "message": "Snapshot instance đang được tạo",
-                "image_url": location
-            }, status=res.status_code)
+            return Response({"message": "Yêu cầu tạo snapshot đã được gửi"}, status=202)
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+
+    def delete(self, request, snapshot_id):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            headers = {"X-Auth-Token": token}
+
+            url = f"{URL_AUTH}/image/v2/images/{snapshot_id}"
+            res = requests.delete(url, headers=headers)
+
+            if res.status_code != 204:
+                return Response({"error": "Không thể xoá snapshot instance"}, status=res.status_code)
+
+            return Response({"message": "Xoá snapshot instance thành công"}, status=204)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
 
 class RestoreVolumeFromSnapshotAPIView(APIView):
     def post(self, request):
