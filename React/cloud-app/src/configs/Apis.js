@@ -21,6 +21,7 @@ export const endpoints = {
     'snapshots-restore-volume':'snapshots-restore-volume/',
     'routers':'routers/',
     'security-groups':'security-groups/',
+    'subnets':'subnets/',
     
 }
 

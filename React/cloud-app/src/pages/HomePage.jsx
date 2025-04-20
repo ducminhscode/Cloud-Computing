@@ -121,7 +121,22 @@ export default function HomePage() {
         "Quản lý rule của từng Security Group"
       ],
       api: "networking/v2.0/security-groups"
-    }        
+    },
+    {
+      name: "Subnet (Neutron)",
+      description: "Quản lý các subnet trong mạng Neutron để phân chia và cấp phát IP cho các tài nguyên trong mạng.",
+      icon: "fas fa-network-wired",
+      color: "from-blue-500 to-teal-600",
+      route: "/service/subnets",
+      features: [
+        "Xem danh sách các Subnet",
+        "Xem chi tiết thông tin subnet (IP range, gateway, DHCP)",
+        "Tạo mới, cập nhật hoặc xoá Subnet",
+        "Quản lý các thuộc tính của từng subnet như DHCP, gateway IP"
+      ],
+      api: "networking/v2.0/subnets"
+    },
+
   ];  
 
   const handleDetailClick = (route) => {

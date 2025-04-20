@@ -11,6 +11,7 @@ const services = [
     { name: "Snapshots", route: "/service/snapshots" },
     { name: "Routers", route: "/service/routers" },
     { name: "Security Groups", route: "/service/security-groups" },
+    { name: "Subnets", route: "/service/subnets" },
 
 ];
 

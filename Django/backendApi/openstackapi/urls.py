@@ -27,7 +27,8 @@ urlpatterns = [
     path('key-pairs/<str:key_name>/', KeyPairAPIView.as_view()),
 
     path('subnets/', SubnetAPIView.as_view()),
-    path('networks/<str:network_id>/subnets/', SubnetAPIView.as_view()),
+    path('networks/<str:subnet_id>/subnets/', SubnetAPIView.as_view()),
+
     path('networks/<str:network_id>/ports/', PortAPIView.as_view()),
     path('routers/', RouterAPIView.as_view()),
     path('networks/<str:router_id>/routers/', RouterAPIView.as_view()),

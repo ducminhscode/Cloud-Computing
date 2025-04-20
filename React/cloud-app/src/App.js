@@ -16,6 +16,7 @@ import SnapshotVolumePage from "./pages/SnapshotVolumePage";
 import SnapshotInstancePage from "./pages/SnapshotInstancePage";
 import RouterPage from "./pages/RouterPage";
 import SecurityGroupPage from "./pages/SecurityGroupPage";
+import SubnetPage from "./pages/SubnetPage";
 
 // Custom route wrapper to protect routes
 const ProtectedRoute = ({ isLoggedIn, children }) => {
@@ -52,6 +53,7 @@ function App() {
                     <Route path="/service/snapshots/instance" element={<ProtectedRoute isLoggedIn={isLoggedIn}><SnapshotInstancePage /></ProtectedRoute>} />
                     <Route path="/service/routers" element={<ProtectedRoute isLoggedIn={isLoggedIn}><RouterPage /></ProtectedRoute>} />
                     <Route path="/service/security-groups" element={<ProtectedRoute isLoggedIn={isLoggedIn}><SecurityGroupPage /></ProtectedRoute>} />
+                    <Route path="/service/subnets" element={<ProtectedRoute isLoggedIn={isLoggedIn}><SubnetPage /></ProtectedRoute>} />
                 </Routes>
             </div>
 

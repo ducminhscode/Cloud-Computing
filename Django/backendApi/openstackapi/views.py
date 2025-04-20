@@ -858,13 +858,13 @@ class NetworkAPIView(APIView):
 
 
 class SubnetAPIView(APIView):
-    def get(self, request, network_id=None):
+    def get(self, request, subnet_id=None):
         token = request.headers.get("X-Auth-Token")
         headers = {"X-Auth-Token": token}
 
         try:
-            if network_id:
-                url = f"{URL_AUTH}:9696/networking/v2.0/subnets?network_id={network_id}"
+            if subnet_id:
+                url = f"{URL_AUTH}:9696/networking/v2.0/subnets/{subnet_id}"
             else:
                 url = f"{URL_AUTH}:9696/networking/v2.0/subnets"
 
@@ -878,7 +878,7 @@ class SubnetAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
-    def post(self, request, network_id):
+    def post(self, request):
         token = request.headers.get("X-Auth-Token")
         headers = {
             "X-Auth-Token": token,
@@ -891,6 +891,7 @@ class SubnetAPIView(APIView):
             gateway_ip = request.data.get("gateway_ip")
             ip_version = request.data.get("ip_version", 4)
             enable_dhcp = request.data.get("enable_dhcp", True)
+            network_id = request.data.get("network_id")
 
             if not all([name, cidr]):
                 return Response({"error": "Thiếu thông tin để tạo subnet"}, status=400)
@@ -943,7 +944,7 @@ class SubnetAPIView(APIView):
             if enable_dhcp is not None:
                 payload["subnet"]["enable_dhcp"] = enable_dhcp
 
-            url = f"{URL_AUTH}:9696/v2.0/subnets/{subnet_id}"
+            url = f"{URL_AUTH}:9696/networking/v2.0/subnets/{subnet_id}"
             res = requests.put(url, headers=headers, json=payload)
 
             if res.status_code != 200:
@@ -960,7 +961,7 @@ class SubnetAPIView(APIView):
         headers = {"X-Auth-Token": token}
 
         try:
-            url = f"{URL_AUTH}:9696/v2.0/subnets/{subnet_id}"
+            url = f"{URL_AUTH}:9696/networking/v2.0/subnets/{subnet_id}"
             res = requests.delete(url, headers=headers)
 
             if res.status_code != 204:
