@@ -103,7 +103,7 @@ const StoragePage = () => {
 
     return (
         <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-6">Volume Management</h1>
+            <h1 className="text-3xl font-bold text-gray-800 mb-6">Quản lý Volume</h1>
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="mb-6 bg-white shadow p-4 rounded-lg">

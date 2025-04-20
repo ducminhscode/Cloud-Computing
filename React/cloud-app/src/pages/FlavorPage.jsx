@@ -29,7 +29,7 @@ const FlavorPage = () => {
 
     return (
         <div className="container mx-auto px-4 py-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-6">Flavor Management</h1>
+            <h1 className="text-3xl font-bold text-gray-800 mb-6">Quản lý Flavor</h1>
 
             {/* Search box */}
             <div className="bg-white rounded-lg shadow p-4 mb-6">
@@ -73,7 +73,7 @@ const FlavorPage = () => {
                                     </tr>
                                 )) : (
                                     <tr>
-                                        <td colSpan="6" className="px-6 py-4 text-center text-gray-500">No flavors found</td>
+                                        <td colSpan="6" className="px-6 py-4 text-center text-gray-500">Không tìm thấy flavors</td>
                                     </tr>
                                 )}
                             </tbody>

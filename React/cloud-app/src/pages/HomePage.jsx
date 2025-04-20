@@ -6,95 +6,95 @@ export default function HomePage() {
 
   const services = [
     {
-      name: "Compute (Nova)",
+      name: "Máy chủ ảo (Nova)",
       description:
-        "Manage virtual servers with Nova. Create, delete, and manage compute instances with various configurations.",
+        "Quản lý máy chủ ảo với Nova. Tạo, xoá và quản lý các instance với nhiều cấu hình khác nhau.",
       icon: "fas fa-server",
       color: "from-blue-500 to-blue-600",
       route: "/service/compute",
       features: [
-        "Launch new instances",
-        "Manage instance states",
-        "Resize instances",
-        "Access instance console",
+        "Khởi tạo instance mới",
+        "Quản lý trạng thái instance",
+        "Thay đổi kích thước instance",
+        "Truy cập console của instance",
       ],
       api: "compute/v2.1",
     },
     {
-      name: "Networking (Neutron)",
+      name: "Mạng ảo (Neutron)",
       description:
-        "Manage virtual networks, subnets, ports, and routers with Neutron networking service.",
+        "Quản lý mạng ảo, subnet, cổng mạng và router với dịch vụ Neutron.",
       icon: "fas fa-network-wired",
       color: "from-green-500 to-green-600",
       route: "/service/networking",
       features: [
-        "Create networks and subnets",
-        "Manage security groups",
-        "Configure routers",
-        "Assign floating IPs",
+        "Tạo mạng và subnet",
+        "Quản lý nhóm bảo mật",
+        "Cấu hình router",
+        "Gán địa chỉ IP nổi (Floating IP)",
       ],
       api: "networking/v2.0",
     },
     {
-      name: "Storage (Cinder)",
+      name: "Lưu trữ khối (Cinder)",
       description:
-        "Manage block storage volumes with Cinder. Create snapshots and manage volume attachments.",
+        "Quản lý ổ đĩa lưu trữ khối với Cinder. Tạo snapshot và quản lý việc gắn kết volume.",
       icon: "fas fa-hdd",
       color: "from-yellow-500 to-yellow-600",
       route: "/service/storage",
       features: [
-        "Create and manage volumes",
-        "Take volume snapshots",
-        "Attach/detach volumes",
-        "Extend volume size",
+        "Tạo và quản lý volume",
+        "Tạo bản snapshot của volume",
+        "Gắn / tháo volume",
+        "Mở rộng dung lượng volume",
       ],
       api: "volume/v3",
     },
     {
-      name: "Images (Glance)",
+      name: "Ảnh đĩa (Glance)",
       description:
-        "Manage disk images with Glance. Upload, manage, and discover available images.",
+        "Quản lý ảnh đĩa hệ điều hành với Glance. Tải lên, quản lý và tìm kiếm ảnh sẵn có.",
       icon: "fas fa-images",
       color: "from-purple-500 to-purple-600",
       route: "/service/images",
       features: [
-        "Upload new images",
-        "Manage image metadata",
-        "Create image snapshots",
-        "Share images across projects",
+        "Tải ảnh mới lên",
+        "Quản lý metadata ảnh",
+        "Tạo snapshot từ ảnh",
+        "Chia sẻ ảnh giữa các dự án",
       ],
       api: "image/v2",
     },
     {
-      name: "Flavors (Nova)",
+      name: "Flavor máy ảo (Nova)",
       description:
-        "Manage virtual machine flavors including CPU, RAM, and disk sizes.",
+        "Quản lý các flavor của máy ảo bao gồm CPU, RAM và dung lượng đĩa.",
       icon: "fas fa-layer-group",
       color: "from-indigo-500 to-indigo-600",
       route: "/service/flavors",
       features: [
-        "List available flavors",
-        "Define custom flavors",
-        "Delete unused flavors",
-        "View flavor specs",
+        "Liệt kê các flavor sẵn có",
+        "Định nghĩa flavor tùy chỉnh",
+        "Xoá các flavor không dùng",
+        "Xem thông số kỹ thuật flavor",
       ],
       api: "compute/v2.1/flavors",
     },
     {
-      name: "Snapshots (Cinder)",
-      description: "Manage volume snapshots for backup and recovery purposes.",
+      name: "Snapshot (Cinder)",
+      description: "Quản lý các snapshot của volume phục vụ sao lưu và khôi phục.",
       icon: "fas fa-camera-retro",
       color: "from-pink-500 to-pink-600",
       route: "/service/snapshots",
       features: [
-        "Create snapshots of volumes",
-        "View snapshot list and details",
-        "Delete unused snapshots",
-        "Restore volumes from snapshots",
+        "Tạo snapshot từ volume",
+        "Xem danh sách và chi tiết snapshot",
+        "Xoá các snapshot không dùng",
+        "Khôi phục volume từ snapshot",
       ],
       api: "volume/v3/snapshots",
     },
-  ];
+  ];  
 
   const handleDetailClick = (route) => {
     navigate(route);
@@ -105,10 +105,10 @@ export default function HomePage() {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-gray-800 mb-4">
-            OpenStack Management Dashboard
+            Bảng điều khiển quản lý OpenStack
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Comprehensive interface to manage all your OpenStack services and resources
+            Giao diện toàn diện để quản lý tất cả các dịch vụ và tài nguyên OpenStack của bạn
           </p>
         </div>
 
@@ -140,40 +140,10 @@ export default function HomePage() {
                 onClick={() => handleDetailClick(service.route)}
                 className="w-full bg-gradient-to-r from-white via-gray-100 to-white text-gray-800 py-2 px-4 rounded-xl font-semibold hover:from-gray-200 hover:to-gray-100 transition"
               >
-                Manage Service →
+                Quản lý dịch vụ →
               </button>
             </div>
           ))}
-        </div>
-
-        <div className="mt-16 bg-white rounded-xl shadow-lg p-8">
-          <h2 className="text-3xl font-bold text-gray-800 mb-6">Quick Actions</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <button onClick={() => navigate("/service/compute/create")}
-              className="bg-blue-100 hover:bg-blue-200 text-blue-800 p-6 rounded-lg transition-colors text-left">
-              <i className="fas fa-plus-circle text-2xl mb-2"></i>
-              <h3 className="font-bold text-lg">New Instance</h3>
-              <p className="text-sm">Launch a new virtual server</p>
-            </button>
-            <button onClick={() => navigate("/service/storage/create")}
-              className="bg-yellow-100 hover:bg-yellow-200 text-yellow-800 p-6 rounded-lg transition-colors text-left">
-              <i className="fas fa-hdd text-2xl mb-2"></i>
-              <h3 className="font-bold text-lg">New Volume</h3>
-              <p className="text-sm">Create block storage volume</p>
-            </button>
-            <button onClick={() => navigate("/service/networking/create")}
-              className="bg-green-100 hover:bg-green-200 text-green-800 p-6 rounded-lg transition-colors text-left">
-              <i className="fas fa-network-wired text-2xl mb-2"></i>
-              <h3 className="font-bold text-lg">New Network</h3>
-              <p className="text-sm">Create virtual network</p>
-            </button>
-            <button onClick={() => navigate("/service/images/upload")}
-              className="bg-purple-100 hover:bg-purple-200 text-purple-800 p-6 rounded-lg transition-colors text-left">
-              <i className="fas fa-cloud-upload-alt text-2xl mb-2"></i>
-              <h3 className="font-bold text-lg">Upload Image</h3>
-              <p className="text-sm">Add new disk image</p>
-            </button>
-          </div>
         </div>
       </div>
     </div>
