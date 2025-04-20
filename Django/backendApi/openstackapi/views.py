@@ -543,24 +543,55 @@ class NetworkAPIView(APIView):
         }
 
         try:
-            network_name = request.data.get("name")
-            admin_state_up = request.data.get("admin_state_up", True)
-            shared = request.data.get("shared", False)
+            data = request.data
 
-            payload = {
+            network_name = data.get("name")
+            subnet_name = data.get("subnet_name")
+            network_cidr = data.get("cidr")  # VD: 10.0.0.0/24
+            gateway_ip = data.get("gateway_ip")  # VD: 10.0.0.1
+            enable_dhcp = data.get("enable_dhcp", True)
+
+            # 1. Tạo network
+            network_payload = {
                 "network": {
                     "name": network_name,
-                    "admin_state_up": admin_state_up,
-                    "shared": shared
+                    "admin_state_up": True,
+                    "shared": False
                 }
             }
 
-            res = requests.post(f"{URL_AUTH}:9696/networking/v2.0/networks", headers=headers, json=payload)
+            net_res = requests.post(f"{URL_AUTH}:9696/networking/v2.0/networks", headers=headers, json=network_payload)
+            if net_res.status_code != 201:
+                return Response({
+                    "error": "Không thể tạo network",
+                    "details": net_res.json()
+                }, status=net_res.status_code)
 
-            if res.status_code != 201:
-                return Response({"error": "Không thể tạo network"}, status=res.status_code)
+            network_id = net_res.json()["network"]["id"]
 
-            return Response(res.json(), status=201)
+            # 2. Tạo subnet cho network
+            subnet_payload = {
+                "subnet": {
+                    "network_id": network_id,
+                    "ip_version": 4,
+                    "cidr": network_cidr,
+                    "name": subnet_name,
+                    "enable_dhcp": enable_dhcp,
+                    "gateway_ip": gateway_ip
+                }
+            }
+
+            subnet_res = requests.post(f"{URL_AUTH}:9696/networking/v2.0/subnets", headers=headers, json=subnet_payload)
+            if subnet_res.status_code != 201:
+                return Response({
+                    "error": "Không thể tạo subnet",
+                    "details": subnet_res.json()
+                }, status=subnet_res.status_code)
+
+            return Response({
+                "network": net_res.json()["network"],
+                "subnet": subnet_res.json()["subnet"]
+            }, status=201)
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
