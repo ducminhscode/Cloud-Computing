@@ -55,22 +55,22 @@ export default function ComputePage() {
     setLoading(true);
     setError(null);
     setSuccessMessage('');
-  
+
     const token = localStorage.getItem('token');
     if (!token) {
       setError('Token không hợp lệ hoặc hết hạn. Vui lòng đăng nhập lại.');
       setLoading(false);
       return;
     }
-  
+
     const networkIds = networkId.split(',').map(id => id.trim()).filter(id => id !== '');
-  
+
     if (!name || !imageRef || !flavorRef || networkIds.length === 0) {
       setError("Vui lòng điền đầy đủ thông tin để tạo instance.");
       setLoading(false);
       return;
     }
-  
+
     const payload = {
       name: name,
       source: imageRef,
@@ -81,9 +81,9 @@ export default function ComputePage() {
       create_new_volume: false,
       delete_volume_instance: false
     };
-  
+
     console.log("Payload gửi lên:", payload);
-  
+
     try {
       const response = await Apis.post(endpoints['instances'], payload, {
         headers: {
@@ -91,7 +91,7 @@ export default function ComputePage() {
           'Content-Type': 'application/json',
         },
       });
-  
+
       if (response.status === 200 || response.status === 202) {
         setSuccessMessage(`Instance "${name}" được tạo thành công!`);
         setName('');
@@ -113,7 +113,7 @@ export default function ComputePage() {
       setLoading(false);
     }
   };
-  
+
 
   const handleDelete = async (instanceId) => {
     const token = localStorage.getItem('token');
@@ -158,7 +158,7 @@ export default function ComputePage() {
     }
   };
 
-  
+
 
   return (
     <div className="container mx-auto p-6">
@@ -225,6 +225,21 @@ export default function ComputePage() {
               </select>
               <p className="text-sm text-gray-500 mt-1">Giữ Ctrl/Command để chọn nhiều mạng</p>
             </div>
+            
+            <div className="mb-6">
+              <label className="block text-gray-700 font-medium mb-2">Chọn Security Group</label>
+              <select
+                multiple
+                value={selectedSecurityGroups}
+                onChange={(e) => setSelectedSecurityGroups([...e.target.selectedOptions].map(o => o.value))}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm"
+              >
+                {securityGroups.map(sg => (
+                  <option key={sg.id} value={sg.id}>{sg.name}</option>
+                ))}
+              </select>
+              <p className="text-sm text-gray-500 mt-1">Giữ Ctrl/Command để chọn nhiều security groups</p>
+            </div>
 
             <button
               type="submit"
@@ -263,12 +278,11 @@ export default function ComputePage() {
                       <td className="px-6 py-4 text-sm text-gray-900">{instance.name}</td>
                       <td className="px-6 py-4 text-sm text-gray-500">{instance.id}</td>
                       <td className="px-6 py-4 text-sm">
-                        <span className={`px-2 py-1 inline-block text-xs font-semibold rounded-full ${
-                          instance.status === 'ACTIVE'
+                        <span className={`px-2 py-1 inline-block text-xs font-semibold rounded-full ${instance.status === 'ACTIVE'
                             ? 'bg-green-100 text-green-800'
                             : instance.status === 'ERROR'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-yellow-100 text-yellow-800'}`}>{instance.status}</span>
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-yellow-100 text-yellow-800'}`}>{instance.status}</span>
                       </td>
                       <td className="px-6 py-4 text-sm space-x-2">
                         <button onClick={() => handleDelete(instance.id)} className="text-red-600 hover:text-red-900">Xóa</button>
