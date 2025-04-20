@@ -404,6 +404,104 @@ class SecurityGroupAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
+    def post(self, request):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            if not token:
+                return Response({"error": "Token không được cung cấp"}, status=401)
+
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            name = request.data.get("name")
+            description = request.data.get("description", "")
+
+            payload = {
+                "security_group": {
+                    "name": name,
+                    "description": description
+                }
+            }
+
+            url = f"{URL_AUTH}:9696/networking/v2.0/security-groups"
+            res = requests.post(url, headers=headers, json=payload)
+
+            if res.status_code != 201:
+                return Response({
+                    "error": "Không thể tạo security group",
+                    "details": res.json()
+                }, status=res.status_code)
+
+            return Response(res.json(), status=201)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def put(self, request, security_group_id):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            if not token:
+                return Response({"error": "Token không được cung cấp"}, status=401)
+
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            name = request.data.get("name")
+            description = request.data.get("description")
+
+            payload = {
+                "security_group": {}
+            }
+
+            if name is not None:
+                payload["security_group"]["name"] = name
+            if description is not None:
+                payload["security_group"]["description"] = description
+
+            url = f"{URL_AUTH}:9696/networking/v2.0/security-groups/{security_group_id}"
+            res = requests.put(url, headers=headers, json=payload)
+
+            if res.status_code != 200:
+                return Response({
+                    "error": "Không thể cập nhật security group",
+                    "details": res.json()
+                }, status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def delete(self, request, security_group_id):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            if not token:
+                return Response({"error": "Token không được cung cấp"}, status=401)
+
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            url = f"{URL_AUTH}:9696/networking/v2.0/security-groups/{security_group_id}"
+            res = requests.delete(url, headers=headers)
+
+            if res.status_code != 204:
+                return Response({
+                    "error": "Không thể xoá security group",
+                    "details": res.json()
+                }, status=res.status_code)
+
+            return Response({"message": "Xoá security group thành công"}, status=204)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+
 class KeyPairAPIView(APIView):
     def get(self, request):
         try:
@@ -1362,7 +1460,27 @@ class RouterAPIView(APIView):
 
 
 class RouterInterfaceAPIView(APIView):
-    def post(self, request, router_id):
+    def get(self, request, router_id):
+        # Lấy danh sách interfaces (ports) gắn với router
+        token = request.headers.get("X-Auth-Token")
+        headers = {"X-Auth-Token": token}
+
+        try:
+            url = f"{URL_AUTH}:9696/networking/v2.0/ports?device_id={router_id}"
+            res = requests.get(url, headers=headers)
+
+            if res.status_code != 200:
+                return Response({
+                    "error": "Không thể lấy danh sách interfaces",
+                    "details": res.json()
+                }, status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def put(self, request, router_id, action):
         # Add interface (subnet) vào router
         token = request.headers.get("X-Auth-Token")
         headers = {
@@ -1377,45 +1495,33 @@ class RouterInterfaceAPIView(APIView):
                 "subnet_id": subnet_id
             }
 
-            url = f"{URL_AUTH}:9696/networking/v2.0/routers/{router_id}/add_router_interface"
-            res = requests.put(url, headers=headers, json=payload)
+            if not subnet_id:
+                return Response({"error": "subnet_id is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-            if res.status_code != 200:
-                return Response({
-                    "error": "Không thể gán interface vào router",
-                    "details": res.json()
-                }, status=res.status_code)
+            if action == 'add_router_interface':
+                url = f"{URL_AUTH}:9696/networking/v2.0/routers/{router_id}/add_router_interface"
+                res = requests.put(url, headers=headers, json=payload)
+                if res.status_code != 200:
+                    return Response({
+                        "error": "Không thể gán interface vào router",
+                        "details": res.json()
+                    }, status=res.status_code)
+                return Response(res.json(), status=200)
 
-            return Response(res.json(), status=200)
+            elif action == 'remove_router_interface':
+                url = f"{URL_AUTH}:9696/networking/v2.0/routers/{router_id}/remove_router_interface"
+                res = requests.put(url, headers=headers, json=payload)
 
-        except Exception as e:
-            return Response({"error": str(e)}, status=500)
+                if res.status_code != 200:
+                    return Response({
+                        "error": "Không thể xoá interface khỏi router",
+                        "details": res.json()
+                    }, status=res.status_code)
 
-    def delete(self, request, router_id):
-        # Remove interface khỏi router
-        token = request.headers.get("X-Auth-Token")
-        headers = {
-            "X-Auth-Token": token,
-            "Content-Type": "application/json"
-        }
+                return Response(res.json(), status=200)
 
-        try:
-            subnet_id = request.data.get("subnet_id")
-
-            payload = {
-                "subnet_id": subnet_id
-            }
-
-            url = f"{URL_AUTH}:9696/networking/v2.0/routers/{router_id}/remove_router_interface"
-            res = requests.put(url, headers=headers, json=payload)
-
-            if res.status_code != 200:
-                return Response({
-                    "error": "Không thể xoá interface khỏi router",
-                    "details": res.json()
-                }, status=res.status_code)
-
-            return Response(res.json(), status=200)
+            else:
+                return Response({"error": "Invalid action"}, status=status.HTTP_400_BAD_REQUEST)
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
