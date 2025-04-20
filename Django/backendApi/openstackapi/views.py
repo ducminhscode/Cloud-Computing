@@ -1637,6 +1637,31 @@ class RouterInterfaceAPIView(APIView):
             return Response({"error": str(e)}, status=500)
 
 class FloatingIPAPIView(APIView):
+    def get(self, request, floating_ip_id):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            if not token:
+                return Response({"error": "Token không được cung cấp"}, status=401)
+
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            if not floating_ip_id:
+                url = f"{URL_AUTH}:9696/networking/v2.0/floatingips"
+            else:
+                url = f"{URL_AUTH}:9696/networking/v2.0/floatingips/{floating_ip_id}"
+            res = requests.get(url, headers=headers)
+
+            if res.status_code != 200:
+                return Response({"error": "Không thể lấy danh sách floating IPs"}, status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
     def post(self, request):
         token = request.headers.get("X-Auth-Token")
         headers = {
@@ -1667,6 +1692,38 @@ class FloatingIPAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
+    def put(self, request, floating_ip_id):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            if not token:
+                return Response({"error": "Token không được cung cấp"}, status=401)
+
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            port_id = request.data.get("port_id")
+            fixed_ip_address = request.data.get("fixed_ip_address")
+
+            payload = {"floatingip": {}}
+            if port_id:
+                payload["floatingip"]["port_id"] = port_id
+            if fixed_ip_address:
+                payload["floatingip"]["fixed_ip_address"] = fixed_ip_address
+
+            url = f"{URL_AUTH}:9696/networking/v2.0/floatingips/{floating_ip_id}"
+            res = requests.put(url, headers=headers, json=payload)
+
+            if res.status_code != 200:
+                return Response({"error": "Không thể cập nhật Floating IP", "details": res.json()},
+                                status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
     def delete(self, request, floating_ip_id):
         token = request.headers.get("X-Auth-Token")
         headers = {"X-Auth-Token": token}
@@ -1682,7 +1739,6 @@ class FloatingIPAPIView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
-
 
 class FloatingIPAssociateAPIView(APIView):
     def post(self, request):
@@ -1734,7 +1790,6 @@ class FloatingIPDisassociateAPIView(APIView):
                 }
             }
 
-            # Gửi request đến Neutron API để disassociate Floating IP
             res = requests.put(f"{URL_AUTH}:9696/networking/v2.0/floatingips/{floating_ip_id}/update", headers=headers, json=payload)
 
             if res.status_code != 200:
