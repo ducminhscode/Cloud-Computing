@@ -3,7 +3,8 @@ from django.urls import path
 from .views import LoginKeystone, InstancesAPIView, NetworkAPIView, VolumeAPIView, SubnetAPIView, PortAPIView, \
     FlavorAPIView, RegisterAPIView, ImagesAPIView, SecurityGroupAPIView, KeyPairAPIView, \
     RestoreInstanceFromSnapshotAPIView, RestoreVolumeFromSnapshotAPIView, VolumeSnapshotAPIView, \
-    InstanceSnapshotAPIView, RouterAPIView, RouterInterfaceAPIView, SecurityGroupRuleAPIView
+    InstanceSnapshotAPIView, RouterAPIView, RouterInterfaceAPIView, SecurityGroupRuleAPIView, FloatingIPAPIView, \
+    FloatingIPAssociateAPIView, FloatingIPDisassociateAPIView
 
 urlpatterns = [
     path("login/", LoginKeystone.as_view()),
@@ -33,6 +34,12 @@ urlpatterns = [
     path('networks/<str:router_id>/routers/', RouterAPIView.as_view()),
     path('networks/<str:router_id>/add_router_interface/', RouterInterfaceAPIView.as_view(), {'action': 'add_router_interface'}),
     path('networks/<str:router_id>/remove_router_interface/', RouterInterfaceAPIView.as_view(), {'action': 'remove_router_interface'}),
+
+    path('floating-ip/', FloatingIPAPIView.as_view()),
+    path('networks/<str:floating_ip_id>/floating-ip/', FloatingIPAPIView.as_view()),
+
+    path('floating-ip-associate', FloatingIPAssociateAPIView.as_view()),
+    path('floating-ip-disassociate', FloatingIPDisassociateAPIView.as_view()),
 
     path('volumes/', VolumeAPIView.as_view()),
     path('volumes/<str:volume_id>/', VolumeAPIView.as_view()),
