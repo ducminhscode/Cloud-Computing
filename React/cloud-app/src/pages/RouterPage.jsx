@@ -10,6 +10,10 @@ const RouterPage = () => {
     external_gateway_info: "",
   });
   const [editingId, setEditingId] = useState(null);
+  const [routerInterfaces, setRouterInterfaces] = useState({});
+  const [subnetInputs, setSubnetInputs] = useState({});
+  const [subnets, setSubnets] = useState([]);
+  const [networks, setNetworks] = useState([]);
 
   const token = localStorage.getItem("token");
 
@@ -27,9 +31,35 @@ const RouterPage = () => {
     }
   };
 
-  useEffect(() => {
-    fetchRouters();
-  }, []);
+  const fetchSubnets = async () => {
+    try {
+      const res = await Apis.get(endpoints["subnets"], { headers });
+      setSubnets(res.data.subnets || []);
+    } catch (err) {
+      console.error("Error fetching subnets:", err);
+    }
+  };
+
+  const fetchNetworks = async () => {
+    try {
+      const res = await Apis.get(endpoints["networks"], { headers });
+      setNetworks(res.data.networks || []);
+    } catch (err) {
+      console.error("Error fetching networks:", err);
+    }
+  };
+
+  const fetchInterfaces = async (routerId) => {
+    try {
+      const res = await Apis.get(
+        `${endpoints["networks"]}${routerId}/` + endpoints["routers-interface"],
+        { headers }
+      );
+      setRouterInterfaces((prev) => ({ ...prev, [routerId]: res.data.ports }));
+    } catch (err) {
+      console.error(`Error fetching interfaces for router ${routerId}:`, err);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -48,7 +78,9 @@ const RouterPage = () => {
     };
 
     if (form.external_gateway_info) {
-      payload.external_gateway_info = form.external_gateway_info;
+      payload.external_gateway_info = {
+        network_id: form.external_gateway_info,
+      };
     }
 
     try {
@@ -86,12 +118,61 @@ const RouterPage = () => {
     if (!window.confirm("Bạn có chắc muốn xoá router này?")) return;
 
     try {
-      await Apis.delete(endpoints["networks"] + `${router_id}/` + endpoints["routers"], { headers });
+      await Apis.delete(
+        endpoints["networks"] + `${router_id}/` + endpoints["routers"],
+        { headers }
+      );
       fetchRouters();
     } catch (err) {
       console.error("Delete error:", err);
     }
   };
+
+  const addInterface = async (routerId, subnetId) => {
+    if (!subnetId) {
+      alert("Vui lòng chọn Subnet.");
+      return;
+    }
+    try {
+      await Apis.put(
+        endpoints["networks"] + `${routerId}/add-router-interface/`,
+        { subnet_id: subnetId },
+        { headers }
+      );
+      fetchInterfaces(routerId);
+    } catch (err) {
+      console.error("Add interface error:", err);
+    }
+  };
+
+  const removeInterface = async (routerId, subnetId) => {
+    const confirmed = window.confirm("Bạn có chắc muốn xoá Interface này không?");
+    if (!confirmed) return;
+  
+    try {
+      await Apis.put(
+        endpoints["networks"] + `${routerId}/remove-router-interface/`,
+        { subnet_id: subnetId },
+        { headers }
+      );
+      fetchInterfaces(routerId);
+    } catch (err) {
+      console.error("Remove interface error:", err);
+    }
+  };
+  
+
+  useEffect(() => {
+    fetchRouters();
+    fetchSubnets();
+    fetchNetworks();
+  }, []);
+
+  useEffect(() => {
+    routers.forEach((router) => {
+      fetchInterfaces(router.id);
+    });
+  }, [routers]);
 
   return (
     <div className="p-6">
@@ -148,6 +229,7 @@ const RouterPage = () => {
               <th className="px-3 py-2 border">Tên</th>
               <th className="px-3 py-2 border">Trạng thái</th>
               <th className="px-3 py-2 border">Gateway</th>
+              <th className="px-3 py-2 border">Interfaces</th>
               <th className="px-3 py-2 border">Hành động</th>
             </tr>
           </thead>
@@ -161,6 +243,71 @@ const RouterPage = () => {
                 </td>
                 <td className="border px-2 py-1">
                   {router?.external_gateway_info?.network_id || "Không có"}
+                </td>
+                <td className="border px-2 py-1">
+                  {routerInterfaces[router.id] &&
+                  routerInterfaces[router.id].length > 0 ? (
+                    <div className="mt-2 bg-gray-50 p-2 rounded border">
+                      <p className="font-semibold">Interfaces:</p>
+                      <ul className="list-disc list-inside">
+                        {routerInterfaces[router.id].map((intf) => (
+                          <li key={intf.id}>
+                            Subnet ID: {intf.fixed_ips[0]?.subnet_id}
+                            <button
+                              onClick={() =>
+                                removeInterface(
+                                  router.id,
+                                  intf.fixed_ips[0]?.subnet_id
+                                )
+                              }
+                              className="ml-2 text-red-500 text-xs underline"
+                            >
+                              Xoá
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500">Không có interfaces nào.</p>
+                  )}
+
+                  <div className="mt-4">
+                    <label htmlFor="subnetId" className="block">
+                      Chọn Subnet để thêm Interface:
+                    </label>
+                    <select
+                      id={`subnet-${router.id}`}
+                      value={subnetInputs[router.id] || ""}
+                      onChange={(e) =>
+                        setSubnetInputs((prev) => ({
+                          ...prev,
+                          [router.id]: e.target.value,
+                        }))
+                      }
+                      className="w-full p-2 border rounded mt-2"
+                    >
+                      <option value="">Chọn Subnet</option>
+                      {subnets
+                        .filter((subnet) => {
+                          const network = networks.find(
+                            (n) => n.id === subnet.network_id
+                          );
+                          return network && !network["router:external"];
+                        })
+                        .map((subnet) => (
+                          <option key={subnet.id} value={subnet.id}>
+                            {subnet.name || "Unnamed"} - {subnet.id}
+                          </option>
+                        ))}
+                    </select>
+                    <button
+                      onClick={() => addInterface(router.id, subnetInputs[router.id])}
+                      className="mt-2 bg-green-600 text-white px-4 py-2 rounded"
+                    >
+                      Thêm Interface
+                    </button>
+                  </div>
                 </td>
                 <td className="border px-2 py-1 space-x-2">
                   <button
@@ -180,7 +327,7 @@ const RouterPage = () => {
             ))}
             {routers.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-4 text-center text-gray-500">
+                <td colSpan={6} className="py-4 text-center text-gray-500">
                   Không có router nào.
                 </td>
               </tr>

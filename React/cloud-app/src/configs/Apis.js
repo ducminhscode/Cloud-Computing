@@ -22,7 +22,11 @@ export const endpoints = {
     'routers':'routers/',
     'security-groups':'security-groups/',
     'subnets':'subnets/',
-    
+    'routers-interface':'routers-interface/',
+    'floating-ip':'floating-ip/',
+    "floating-ip-associate": "floating-ip-associate/",
+    "floating-ip-disassociate": "floating-ip-disassociate/",
+    "port":"port/",
 }
 
 export default axios.create({

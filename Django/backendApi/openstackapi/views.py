@@ -1637,7 +1637,7 @@ class RouterInterfaceAPIView(APIView):
             return Response({"error": str(e)}, status=500)
 
 class FloatingIPAPIView(APIView):
-    def get(self, request, floating_ip_id):
+    def get(self, request, floating_ip_id=None):
         try:
             token = request.headers.get("X-Auth-Token")
             if not token:
@@ -1670,15 +1670,27 @@ class FloatingIPAPIView(APIView):
         }
 
         try:
-            # Lấy external network ID từ request data
-            floating_network_id = request.data.get("floating_network_id")
+            # Lấy danh sách các mạng external (public)
+            network_res = requests.get(f"{URL_AUTH}:9696/networking/v2.0/networks?router:external=true",
+                                       headers=headers)
+            if network_res.status_code != 200:
+                return Response({"error": "Không thể lấy danh sách mạng public"}, status=network_res.status_code)
 
+            networks = network_res.json().get("networks", [])
+            if not networks:
+                return Response({"error": "Không tìm thấy mạng public nào"}, status=400)
+
+            # Lấy ID của mạng public đầu tiên
+            public_network_id = networks[0]["id"]
+
+            # Tạo payload để tạo Floating IP
             payload = {
                 "floatingip": {
-                    "floating_network_id": floating_network_id
+                    "floating_network_id": public_network_id
                 }
             }
 
+            # Gửi yêu cầu tạo Floating IP
             res = requests.post(f"{URL_AUTH}:9696/networking/v2.0/floatingips", headers=headers, json=payload)
 
             if res.status_code != 201:
@@ -1744,13 +1756,25 @@ class FloatingIPAssociateAPIView(APIView):
     def post(self, request):
         token = request.headers.get("X-Auth-Token")
         headers = {
-            "X-Auth-Token": token,
+            "X-Auth-Token": get_admin_token(),
             "Content-Type": "application/json"
         }
 
         try:
             floating_ip_id = request.data.get("floating_ip_id")
-            port_id = request.data.get("port_id")
+            ip_address = request.data.get("ip_address")
+
+            if not ip_address:
+                return Response({"error": "Missing ip_address"}, status=400)
+
+            # Tìm port_id từ fixed IP address
+            ports_res = requests.get(f"{URL_AUTH}:9696/networking/v2.0/ports?fixed_ips=ip_address={ip_address}", headers=headers)
+            ports_data = ports_res.json()
+
+            if not ports_data.get("ports"):
+                return Response({"error": "Không tìm thấy port với địa chỉ IP này"}, status=404)
+
+            port_id = ports_data["ports"][0]["id"]
 
             payload = {
                 "floatingip": {
@@ -1758,8 +1782,11 @@ class FloatingIPAssociateAPIView(APIView):
                 }
             }
 
-            # Gửi request đến Neutron API để associate Floating IP
-            res = requests.put(f"{URL_AUTH}:9696/networking/v2.0/floatingips/{floating_ip_id}/update", headers=headers, json=payload)
+            res = requests.put(
+                f"{URL_AUTH}:9696/networking/v2.0/floatingips/{floating_ip_id}",
+                headers=headers,
+                json=payload
+            )
 
             if res.status_code != 200:
                 return Response({
@@ -1777,24 +1804,32 @@ class FloatingIPDisassociateAPIView(APIView):
     def post(self, request):
         token = request.headers.get("X-Auth-Token")
         headers = {
-            "X-Auth-Token": token,
+            "X-Auth-Token": get_admin_token(),  # nên dùng admin token nếu cần quyền cao hơn
             "Content-Type": "application/json"
         }
 
         try:
             floating_ip_id = request.data.get("floating_ip_id")
 
+            if not floating_ip_id:
+                return Response({"error": "Thiếu floating_ip_id"}, status=400)
+
             payload = {
                 "floatingip": {
-                    "port_id": None  # Disassociate bằng cách đặt port_id là None
+                    "port_id": None  # Hủy liên kết bằng cách đặt port_id = None
                 }
             }
 
-            res = requests.put(f"{URL_AUTH}:9696/networking/v2.0/floatingips/{floating_ip_id}/update", headers=headers, json=payload)
+            # ✅ Sửa URL: bỏ `/update`
+            res = requests.put(
+                f"{URL_AUTH}:9696/networking/v2.0/floatingips/{floating_ip_id}",
+                headers=headers,
+                json=payload
+            )
 
             if res.status_code != 200:
                 return Response({
-                    "error": "Không thể disassociate Floating IP",
+                    "error": "Không thể hủy gán Floating IP",
                     "details": res.json()
                 }, status=res.status_code)
 
@@ -1802,3 +1837,4 @@ class FloatingIPDisassociateAPIView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+

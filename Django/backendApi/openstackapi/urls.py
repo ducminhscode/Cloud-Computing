@@ -32,15 +32,18 @@ urlpatterns = [
 
     path('networks/<str:network_id>/ports/', PortAPIView.as_view()),
     path('routers/', RouterAPIView.as_view()),
+
     path('networks/<str:router_id>/routers/', RouterAPIView.as_view()),
-    path('networks/<str:router_id>/add_router_interface/', RouterInterfaceAPIView.as_view(), {'action': 'add_router_interface'}),
-    path('networks/<str:router_id>/remove_router_interface/', RouterInterfaceAPIView.as_view(), {'action': 'remove_router_interface'}),
+
+    path('networks/<str:router_id>/routers-interface/', RouterInterfaceAPIView.as_view()),
+    path('networks/<str:router_id>/add-router-interface/', RouterInterfaceAPIView.as_view(), {'action': 'add_router_interface'}),
+    path('networks/<str:router_id>/remove-router-interface/', RouterInterfaceAPIView.as_view(), {'action': 'remove_router_interface'}),
 
     path('floating-ip/', FloatingIPAPIView.as_view()),
     path('networks/<str:floating_ip_id>/floating-ip/', FloatingIPAPIView.as_view()),
 
-    path('floating-ip-associate', FloatingIPAssociateAPIView.as_view()),
-    path('floating-ip-disassociate', FloatingIPDisassociateAPIView.as_view()),
+    path('floating-ip-associate/', FloatingIPAssociateAPIView.as_view()),
+    path('floating-ip-disassociate/', FloatingIPDisassociateAPIView.as_view()),
 
     path('volumes/', VolumeAPIView.as_view()),
     path('volumes/<str:volume_id>/', VolumeAPIView.as_view()),
@@ -52,6 +55,9 @@ urlpatterns = [
     path("snapshot-instance/<str:snapshot_id>/", InstanceSnapshotAPIView.as_view()),
 
     path('image/', ImagesAPIView.as_view()),
+
+    path('port/', PortAPIView.as_view()),
+
 
     path('snapshots-restore-instance/', RestoreInstanceFromSnapshotAPIView.as_view()),
     path('snapshots-restore-volume/', RestoreVolumeFromSnapshotAPIView.as_view())

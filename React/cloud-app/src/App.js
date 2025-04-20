@@ -17,6 +17,7 @@ import SnapshotInstancePage from "./pages/SnapshotInstancePage";
 import RouterPage from "./pages/RouterPage";
 import SecurityGroupPage from "./pages/SecurityGroupPage";
 import SubnetPage from "./pages/SubnetPage";
+import FloatingIPPage from "./pages/FloatingIPPage";
 
 // Custom route wrapper to protect routes
 const ProtectedRoute = ({ isLoggedIn, children }) => {
@@ -54,6 +55,7 @@ function App() {
                     <Route path="/service/routers" element={<ProtectedRoute isLoggedIn={isLoggedIn}><RouterPage /></ProtectedRoute>} />
                     <Route path="/service/security-groups" element={<ProtectedRoute isLoggedIn={isLoggedIn}><SecurityGroupPage /></ProtectedRoute>} />
                     <Route path="/service/subnets" element={<ProtectedRoute isLoggedIn={isLoggedIn}><SubnetPage /></ProtectedRoute>} />
+                    <Route path="/service/floating-ip" element={<ProtectedRoute isLoggedIn={isLoggedIn}><FloatingIPPage /></ProtectedRoute>} />
                 </Routes>
             </div>
 

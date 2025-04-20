@@ -136,6 +136,21 @@ export default function HomePage() {
       ],
       api: "networking/v2.0/subnets"
     },
+    {
+      name: "Floating IP (Neutron)",
+      description: "Quản lý các địa chỉ Floating IP để kết nối tài nguyên nội bộ ra ngoài Internet hoặc mạng công cộng.",
+      icon: "fas fa-globe",
+      color: "from-blue-500 to-indigo-600",
+      route: "/service/floating-ip",
+      features: [
+        "Xem danh sách các Floating IP",
+        "Tạo mới Floating IP",
+        "Gán (Associate) Floating IP cho port (VM, instance)",
+        "Huỷ gán (Disassociate) Floating IP",
+        "Xoá Floating IP không còn sử dụng"
+      ],
+      api: "networking/v2.0/floatingips"
+    }    
 
   ];  
 
