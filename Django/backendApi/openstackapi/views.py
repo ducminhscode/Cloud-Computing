@@ -1239,3 +1239,233 @@ class RestoreInstanceFromSnapshotAPIView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+
+
+class RouterAPIView(APIView):
+    def post(self, request):
+        # Tạo router mới
+        token = request.headers.get("X-Auth-Token")
+        headers = {
+            "X-Auth-Token": token,
+            "Content-Type": "application/json"
+        }
+
+        try:
+            router_name = request.data.get("name")
+            admin_state_up = request.data.get("admin_state_up", True)
+            external_network_id = request.data.get("external_gateway_info")
+
+            payload = {
+                "router": {
+                    "name": router_name,
+                    "admin_state_up": admin_state_up
+                }
+            }
+
+            # Nếu có external network (thường khi gán gateway)
+            if external_network_id:
+                payload["router"]["external_gateway_info"] = {
+                    "network_id": external_network_id
+                }
+
+            res = requests.post(f"{URL_AUTH}:9696/networking/v2.0/routers", headers=headers, json=payload)
+
+            if res.status_code != 201:
+                return Response({
+                    "error": "Không thể tạo router",
+                    "details": res.json()
+                }, status=res.status_code)
+
+            return Response(res.json(), status=201)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def delete(self, request, router_id):
+        # Xoá router theo ID
+        token = request.headers.get("X-Auth-Token")
+        headers = {"X-Auth-Token": token}
+
+        try:
+            url = f"{URL_AUTH}:9696/networking/v2.0/routers/{router_id}"
+            res = requests.delete(url, headers=headers)
+
+            if res.status_code != 204:
+                return Response({"error": "Không thể xoá router"}, status=res.status_code)
+
+            return Response({"message": "Xoá router thành công"}, status=204)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+
+class RouterInterfaceAPIView(APIView):
+    def post(self, request, router_id):
+        # Add interface (subnet) vào router
+        token = request.headers.get("X-Auth-Token")
+        headers = {
+            "X-Auth-Token": token,
+            "Content-Type": "application/json"
+        }
+
+        try:
+            subnet_id = request.data.get("subnet_id")
+
+            payload = {
+                "subnet_id": subnet_id
+            }
+
+            url = f"{URL_AUTH}:9696/networking/v2.0/routers/{router_id}/add_router_interface"
+            res = requests.put(url, headers=headers, json=payload)
+
+            if res.status_code != 200:
+                return Response({
+                    "error": "Không thể gán interface vào router",
+                    "details": res.json()
+                }, status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def delete(self, request, router_id):
+        # Remove interface khỏi router
+        token = request.headers.get("X-Auth-Token")
+        headers = {
+            "X-Auth-Token": token,
+            "Content-Type": "application/json"
+        }
+
+        try:
+            subnet_id = request.data.get("subnet_id")
+
+            payload = {
+                "subnet_id": subnet_id
+            }
+
+            url = f"{URL_AUTH}:9696/networking/v2.0/routers/{router_id}/remove_router_interface"
+            res = requests.put(url, headers=headers, json=payload)
+
+            if res.status_code != 200:
+                return Response({
+                    "error": "Không thể xoá interface khỏi router",
+                    "details": res.json()
+                }, status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+class FloatingIPAPIView(APIView):
+    def post(self, request):
+        token = request.headers.get("X-Auth-Token")
+        headers = {
+            "X-Auth-Token": token,
+            "Content-Type": "application/json"
+        }
+
+        try:
+            # Lấy external network ID từ request data
+            floating_network_id = request.data.get("floating_network_id")
+
+            payload = {
+                "floatingip": {
+                    "floating_network_id": floating_network_id
+                }
+            }
+
+            res = requests.post(f"{URL_AUTH}:9696/networking/v2.0/floatingips", headers=headers, json=payload)
+
+            if res.status_code != 201:
+                return Response({
+                    "error": "Không thể tạo Floating IP",
+                    "details": res.json()
+                }, status=res.status_code)
+
+            return Response(res.json(), status=201)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def delete(self, request, floating_ip_id):
+        token = request.headers.get("X-Auth-Token")
+        headers = {"X-Auth-Token": token}
+
+        try:
+            url = f"{URL_AUTH}:9696/networking/v2.0/floatingips/{floating_ip_id}"
+            res = requests.delete(url, headers=headers)
+
+            if res.status_code != 204:
+                return Response({"error": "Không thể xoá Floating IP"}, status=res.status_code)
+
+            return Response({"message": "Xoá Floating IP thành công"}, status=204)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+
+class FloatingIPAssociateAPIView(APIView):
+    def post(self, request):
+        token = request.headers.get("X-Auth-Token")
+        headers = {
+            "X-Auth-Token": token,
+            "Content-Type": "application/json"
+        }
+
+        try:
+            floating_ip_id = request.data.get("floating_ip_id")
+            port_id = request.data.get("port_id")
+
+            payload = {
+                "floatingip": {
+                    "port_id": port_id
+                }
+            }
+
+            # Gửi request đến Neutron API để associate Floating IP
+            res = requests.put(f"{URL_AUTH}:9696/networking/v2.0/floatingips/{floating_ip_id}/update", headers=headers, json=payload)
+
+            if res.status_code != 200:
+                return Response({
+                    "error": "Không thể associate Floating IP",
+                    "details": res.json()
+                }, status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+
+class FloatingIPDisassociateAPIView(APIView):
+    def post(self, request):
+        token = request.headers.get("X-Auth-Token")
+        headers = {
+            "X-Auth-Token": token,
+            "Content-Type": "application/json"
+        }
+
+        try:
+            floating_ip_id = request.data.get("floating_ip_id")
+
+            payload = {
+                "floatingip": {
+                    "port_id": None  # Disassociate bằng cách đặt port_id là None
+                }
+            }
+
+            # Gửi request đến Neutron API để disassociate Floating IP
+            res = requests.put(f"{URL_AUTH}:9696/networking/v2.0/floatingips/{floating_ip_id}/update", headers=headers, json=payload)
+
+            if res.status_code != 200:
+                return Response({
+                    "error": "Không thể disassociate Floating IP",
+                    "details": res.json()
+                }, status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
