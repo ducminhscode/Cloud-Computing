@@ -501,6 +501,115 @@ class SecurityGroupAPIView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
+class SecurityGroupRuleAPIView(APIView):
+    def get(self, request):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            if not token:
+                return Response({"error": "Token không được cung cấp"}, status=401)
+
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            url = f"{URL_AUTH}:9696/networking/v2.0/security-group-rules"
+            res = requests.get(url, headers=headers)
+
+            if res.status_code != 200:
+                return Response({
+                    "error": "Không thể lấy danh sách security group rules",
+                    "details": res.json()
+                }, status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def post(self, request):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            if not token:
+                return Response({"error": "Token không được cung cấp"}, status=401)
+
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            security_group_id = request.data.get("security_group_id")
+            description = request.data.get("description", "")
+            direction = request.data.get("direction", "ingress")
+            ethertype = request.data.get("ethertype", "IPv4")
+            protocol = request.data.get("protocol")
+            port_range_min = request.data.get("port_range_min")
+            port_range_max = request.data.get("port_range_max")
+            remote_ip_prefix = request.data.get("remote_ip_prefix")
+            remote_group_id = request.data.get("remote_group_id")
+            remote_address_group_id = request.data.get("remote_address_group_id")
+
+            rule = {
+                "security_group_id": security_group_id,
+                "direction": direction,
+                "ethertype": ethertype,
+                "description": description
+            }
+
+            if protocol:
+                rule["protocol"] = protocol
+            if port_range_min is not None:
+                rule["port_range_min"] = port_range_min
+            if port_range_max is not None:
+                rule["port_range_max"] = port_range_max
+            if remote_ip_prefix:
+                rule["remote_ip_prefix"] = remote_ip_prefix
+            if remote_group_id:
+                rule["remote_group_id"] = remote_group_id
+            if remote_address_group_id:
+                rule["remote_address_group_id"] = remote_address_group_id
+
+            payload = {"security_group_rule": rule}
+
+            url = f"{URL_AUTH}:9696/networking/v2.0/security-group-rules"
+            res = requests.post(url, headers=headers, json=payload)
+
+            if res.status_code != 201:
+                return Response({
+                    "error": "Không thể tạo security group rule",
+                    "details": res.json()
+                }, status=res.status_code)
+
+            return Response(res.json(), status=201)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def delete(self, request, rule_id):
+        try:
+            token = request.headers.get("X-Auth-Token")
+            if not token:
+                return Response({"error": "Token không được cung cấp"}, status=401)
+
+            headers = {
+                "X-Auth-Token": token,
+                "Content-Type": "application/json"
+            }
+
+            url = f"{URL_AUTH}:9696/networking/v2.0/security-group-rules/{rule_id}"
+            res = requests.delete(url, headers=headers)
+
+            if res.status_code != 204:
+                return Response({
+                    "error": "Không thể xoá security group rule",
+                    "details": res.json()
+                }, status=res.status_code)
+
+            return Response({"message": "Xoá rule thành công"}, status=204)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
 
 class KeyPairAPIView(APIView):
     def get(self, request):

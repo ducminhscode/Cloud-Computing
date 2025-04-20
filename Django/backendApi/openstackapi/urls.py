@@ -3,7 +3,7 @@ from django.urls import path
 from .views import LoginKeystone, InstancesAPIView, NetworkAPIView, VolumeAPIView, SubnetAPIView, PortAPIView, \
     FlavorAPIView, RegisterAPIView, ImagesAPIView, SecurityGroupAPIView, KeyPairAPIView, \
     RestoreInstanceFromSnapshotAPIView, RestoreVolumeFromSnapshotAPIView, VolumeSnapshotAPIView, \
-    InstanceSnapshotAPIView, RouterAPIView, RouterInterfaceAPIView
+    InstanceSnapshotAPIView, RouterAPIView, RouterInterfaceAPIView, SecurityGroupRuleAPIView
 
 urlpatterns = [
     path("login/", LoginKeystone.as_view()),
@@ -19,6 +19,9 @@ urlpatterns = [
 
     path('security-groups/', SecurityGroupAPIView.as_view()),
     path('networks/<str:security_group_id>/security-groups/', SecurityGroupAPIView.as_view()),
+
+    path('security-group-rules/', SecurityGroupRuleAPIView.as_view()),
+    path('networks/<str:rule_id>/security-group-rules/', SecurityGroupRuleAPIView.as_view()),
 
     path('key-pairs/', KeyPairAPIView.as_view()),
     path('key-pairs/<str:key_name>/', KeyPairAPIView.as_view()),
