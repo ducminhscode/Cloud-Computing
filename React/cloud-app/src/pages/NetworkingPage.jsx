@@ -1,428 +1,220 @@
 import React, { useState, useEffect } from 'react';
 import Apis, { endpoints } from '../configs/Apis';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 
-const NetworkingPage = () => {
-    const [networks, setNetworks] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [networkDetails, setNetworkDetails] = useState(null);
-    const [showCreateModal, setShowCreateModal] = useState(false);
-    const [showEditModal, setShowEditModal] = useState(false);
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [selectedNetworkId, setSelectedNetworkId] = useState(null);
-    const [formData, setFormData] = useState({
-        name: '',
-        admin_state_up: true,
-        shared: false
-    });
+export default function NetworkingPage() {
+  const [name, setName] = useState('');
+  const [subnetName, setSubnetName] = useState('');
+  const [cidr, setCidr] = useState('');
+  const [gatewayIp, setGatewayIp] = useState('');
+  const [enableDhcp, setEnableDhcp] = useState(true);
+  const [networks, setNetworks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
 
-    // Fetch all networks
+  useEffect(() => {
     const fetchNetworks = async () => {
-        const token = localStorage.getItem('token');
-        try {
-            setLoading(true);
-            const headers = {
-                'X-Auth-Token': token,
-              };
-            const response = await Apis.get(endpoints['networks'], { headers });
-            console.log(response.data.networks);
-            setNetworks(response.data.networks || []);
-        } catch (error) {
-            toast.error(error.response?.data?.error || "Failed to fetch networks");
-        } finally {
-            setLoading(false);
-        }
+      const token = localStorage.getItem('token');
+      const headers = { 'X-Auth-Token': token };
+
+      try {
+        const res = await Apis.get(endpoints['networks'], { headers });
+        setNetworks(res.data.networks || []);
+      } catch (err) {
+        console.error('Lỗi khi tải danh sách mạng:', err);
+        setError('Không thể tải danh sách mạng');
+      }
     };
 
-    // Fetch single network details
-    const fetchNetworkDetails = async (networkId) => {
-        const token = localStorage.getItem('token');
-        const headers = {
-            'X-Auth-Token': token,
-        }
-        try {
-            const response = await Apis.get(`${endpoints.networks}${networkId}/`, { headers });
-            setNetworkDetails(response.data.network);
-        } catch (error) {
-            toast.error(error.response?.data?.error || "Failed to fetch network details");
-        }
+    fetchNetworks();
+  }, [successMessage]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccessMessage('');
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Token không hợp lệ hoặc hết hạn. Vui lòng đăng nhập lại.');
+      setLoading(false);
+      return;
+    }
+
+    if (!name || !subnetName || !cidr || !gatewayIp) {
+      setError('Vui lòng điền đầy đủ thông tin để tạo network.');
+      setLoading(false);
+      return;
+    }
+
+    const payload = {
+      name,
+      subnet_name: subnetName,
+      cidr,
+      gateway_ip: gatewayIp,
+      enable_dhcp: enableDhcp,
     };
 
-    // Handle create network
-    const handleCreateNetwork = async () => {
-        const token = localStorage.getItem('token');
-        try {
-            const payload = {
-                name: formData.name,
-                admin_state_up: Boolean(formData.admin_state_up),
-                shared: Boolean(formData.shared)
-            };
+    try {
+      const response = await Apis.post(endpoints['networks'], payload, {
+        headers: {
+          'X-Auth-Token': token,
+          'Content-Type': 'application/json',
+        },
+      });
 
-            const headers = {
-                'X-Auth-Token': token,
-                'Content-Type': 'application/json',
-              };
+      if (response.status === 201) {
+        setSuccessMessage(`Network "${name}" được tạo thành công!`);
+        setName('');
+        setSubnetName('');
+        setCidr('');
+        setGatewayIp('');
+      }
+    } catch (err) {
+      console.error('Chi tiết lỗi:', err);
+      setError(`Lỗi từ server: ${err.response?.data?.error || 'Không thể tạo network. Vui lòng thử lại!'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            console.log(payload);
-    
-            await Apis.post(endpoints['networks'], payload, {
-                headers: headers
-            });
-            
-            toast.success("Network created successfully!");
-            setShowCreateModal(false);
-            fetchNetworks();
-            setFormData({
-                name: '',
-                admin_state_up: true,
-                shared: false
-            });
-        } catch (error) {
-            // Improved error logging
-            console.error("Create Network Error:", error);
-            toast.error(error.response?.data?.error || "Failed to create network");
-        }
-    };
+  const handleDelete = async (networkId) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Token không hợp lệ hoặc hết hạn. Vui lòng đăng nhập lại.');
+      return;
+    }
 
-    // Handle update network
-    const handleUpdateNetwork = async () => {
-        const token = localStorage.getItem('token');
-        const headers = {
-            'X-Auth-Token': token,
-            'Content-Type': 'application/json',
-        }
-        try {
-            await Apis.put(`${endpoints['networks']}${selectedNetworkId}/`, {
-                name: formData.name,
-                admin_state_up: formData.admin_state_up
-            }, { headers });
-            toast.success("Network updated successfully!");
-            setShowEditModal(false);
-            fetchNetworks();
-        } catch (error) {
-            toast.error(error.response?.data?.error || "Failed to update network");
-        }
-    };
+    try {
+      const response = await Apis.delete(`${endpoints['networks']}${networkId}/`, {
+        headers: {
+          'X-Auth-Token': token,
+        },
+      });
 
-    // Handle delete network
-    const handleDeleteNetwork = async () => {
-        const token = localStorage.getItem('token');
-        const headers = {
-            'X-Auth-Token': token,
-        }
-        try {
-            await Apis.delete(`${endpoints['networks']}${selectedNetworkId}/`, { headers });
-            toast.success("Network deleted successfully!");
-            setShowDeleteModal(false);
-            fetchNetworks();
-        } catch (error) {
-            toast.error(error.response?.data?.error || "Failed to delete network");
-        }
-    };
+      if (response.status === 204) {
+        setSuccessMessage(`Network "${networkId}" đã được xóa thành công!`);
+        setNetworks(networks.filter(network => network.id !== networkId));
+      }
+    } catch (err) {
+      console.error('Lỗi khi xóa network:', err);
+      setError('Không thể xóa network. Vui lòng thử lại!');
+    }
+  };
 
-    // Open edit modal and pre-fill form
-    const openEditModal = (network) => {
-        setSelectedNetworkId(network.id);
-        setFormData({
-            name: network.name,
-            admin_state_up: network.admin_state_up,
-            shared: network.shared || false
-        });
-        setShowEditModal(true);
-    };
+  return (
+    <div className="container mx-auto p-6">
+      <h1 className="text-3xl font-bold text-center mb-8">Quản lý Networks</h1>
 
-    // Open delete confirmation modal
-    const openDeleteModal = (networkId) => {
-        setSelectedNetworkId(networkId);
-        setShowDeleteModal(true);
-    };
-
-    // Handle form input changes
-    const handleInputChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setFormData({
-            ...formData,
-            [name]: type === 'checkbox' ? checked : value
-        });
-    };
-
-    // Load networks on component mount
-    useEffect(() => {
-        fetchNetworks();
-    }, []);
-
-    return (
-        <div className="container mx-auto px-4 py-8">
-            <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-bold text-gray-800">Quản lý Networks</h1>
-                <button
-                    onClick={() => setShowCreateModal(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-                >
-                    Tạo Network mới
-                </button>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-2xl font-bold text-center mb-6">Tạo Network Mới</h2>
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label className="block text-gray-700 font-medium mb-2">Tên Network</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm"
+                placeholder="my-network"
+              />
             </div>
 
-            {loading ? (
-                <div className="flex justify-center items-center h-64">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-                </div>
-            ) : (
-                <div className="bg-white shadow-md rounded-lg overflow-hidden">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                            <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shared</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                            {networks.length === 0 ? (
-                                <tr>
-                                    <td colSpan="4" className="px-6 py-4 text-center text-gray-500">Không tìm thấy networks</td>
-                                </tr>
-                            ) : (
-                                networks.map((network) => (
-                                    <tr key={network.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-medium text-gray-900">{network.name}</div>
-                                            <div className="text-sm text-gray-500">{network.id}</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${network.admin_state_up ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                {network.admin_state_up ? 'Active' : 'Inactive'}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${network.shared ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
-                                                {network.shared ? 'Yes' : 'No'}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <button
-                                                onClick={() => {
-                                                    setSelectedNetworkId(network.id);
-                                                    fetchNetworkDetails(network.id);
-                                                }}
-                                                className="text-blue-600 hover:text-blue-900 mr-4"
-                                            >
-                                                Chi tiết
-                                            </button>
-                                            <button
-                                                onClick={() => openEditModal(network)}
-                                                className="text-indigo-600 hover:text-indigo-900 mr-4"
-                                            >
-                                                Chỉnh sửa
-                                            </button>
-                                            <button
-                                                onClick={() => openDeleteModal(network.id)}
-                                                className="text-red-600 hover:text-red-900"
-                                            >
-                                                Xóa
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            )}
+            <div className="mb-4">
+              <label className="block text-gray-700 font-medium mb-2">Tên Subnet</label>
+              <input
+                type="text"
+                value={subnetName}
+                onChange={(e) => setSubnetName(e.target.value)}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm"
+                placeholder="my-subnet"
+              />
+            </div>
 
-            {/* Network Details Modal */}
-            {networkDetails && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold">Chi tiết Network</h2>
-                            <button
-                                onClick={() => setNetworkDetails(null)}
-                                className="text-gray-500 hover:text-gray-700"
-                            >
-                                &times;
-                            </button>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <h3 className="font-semibold">Thông tin cơ bản</h3>
-                                <p><span className="font-medium">ID:</span> {networkDetails.id}</p>
-                                <p><span className="font-medium">Name:</span> {networkDetails.name}</p>
-                                <p><span className="font-medium">Status:</span> {networkDetails.admin_state_up ? 'Active' : 'Inactive'}</p>
-                                <p><span className="font-medium">Shared:</span> {networkDetails.shared ? 'Yes' : 'No'}</p>
-                            </div>
-                            <div>
-                                <h3 className="font-semibold">Thông tin bổ sung</h3>
-                                <p><span className="font-medium">Created At:</span> {new Date(networkDetails.created_at).toLocaleString()}</p>
-                                <p><span className="font-medium">Updated At:</span> {new Date(networkDetails.updated_at).toLocaleString()}</p>
-                                <p><span className="font-medium">MTU:</span> {networkDetails.mtu}</p>
-                            </div>
-                        </div>
-                        <div className="mt-6 flex justify-end">
-                            <button
-                                onClick={() => setNetworkDetails(null)}
-                                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md"
-                            >
-                                Đóng
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <div className="mb-4">
+              <label className="block text-gray-700 font-medium mb-2">CIDR</label>
+              <input
+                type="text"
+                value={cidr}
+                onChange={(e) => setCidr(e.target.value)}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm"
+                placeholder="10.0.0.0/24"
+              />
+            </div>
 
-            {/* Create Network Modal */}
-            {showCreateModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold">Tạo Network mới</h2>
-                            <button
-                                onClick={() => setShowCreateModal(false)}
-                                className="text-gray-500 hover:text-gray-700"
-                            >
-                                &times;
-                            </button>
-                        </div>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Network Name</label>
-                                <input
-                                    type="text"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleInputChange}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                    required
-                                />
-                            </div>
-                            <div className="flex items-center">
-                                <input
-                                    type="checkbox"
-                                    name="admin_state_up"
-                                    checked={formData.admin_state_up}
-                                    onChange={handleInputChange}
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                />
-                                <label className="ml-2 block text-sm text-gray-700">Admin State Up</label>
-                            </div>
-                            <div className="flex items-center">
-                                <input
-                                    type="checkbox"
-                                    name="shared"
-                                    checked={formData.shared}
-                                    onChange={handleInputChange}
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                />
-                                <label className="ml-2 block text-sm text-gray-700">Shared Network</label>
-                            </div>
-                        </div>
-                        <div className="mt-6 flex justify-end space-x-3">
-                            <button
-                                onClick={() => setShowCreateModal(false)}
-                                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md"
-                            >
-                                Hủy
-                            </button>
-                            <button
-                                onClick={handleCreateNetwork}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
-                            >
-                                Tạo
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <div className="mb-4">
+              <label className="block text-gray-700 font-medium mb-2">Gateway IP</label>
+              <input
+                type="text"
+                value={gatewayIp}
+                onChange={(e) => setGatewayIp(e.target.value)}
+                required
+                className="w-full px-4 py-2 border border-gray-300 rounded-md shadow-sm"
+                placeholder="10.0.0.1"
+              />
+            </div>
 
-            {/* Edit Network Modal */}
-            {showEditModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold">Chỉnh sửa Network</h2>
-                            <button
-                                onClick={() => setShowEditModal(false)}
-                                className="text-gray-500 hover:text-gray-700"
-                            >
-                                &times;
-                            </button>
-                        </div>
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Network Name</label>
-                                <input
-                                    type="text"
-                                    name="name"
-                                    value={formData.name}
-                                    onChange={handleInputChange}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                                    required
-                                />
-                            </div>
-                            <div className="flex items-center">
-                                <input
-                                    type="checkbox"
-                                    name="admin_state_up"
-                                    checked={formData.admin_state_up}
-                                    onChange={handleInputChange}
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                />
-                                <label className="ml-2 block text-sm text-gray-700">Admin State Up</label>
-                            </div>
-                        </div>
-                        <div className="mt-6 flex justify-end space-x-3">
-                            <button
-                                onClick={() => setShowEditModal(false)}
-                                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md"
-                            >
-                                Hủy
-                            </button>
-                            <button
-                                onClick={handleUpdateNetwork}
-                                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md"
-                            >
-                                Cập nhật
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <div className="mb-6">
+              <label className="inline-flex items-center">
+                <input
+                  type="checkbox"
+                  checked={enableDhcp}
+                  onChange={() => setEnableDhcp(!enableDhcp)}
+                  className="form-checkbox h-5 w-5 text-blue-600"
+                />
+                <span className="ml-2">Enable DHCP</span>
+              </label>
+            </div>
 
-            {/* Delete Confirmation Modal */}
-            {showDeleteModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold">Xác nhận xóa</h2>
-                            <button
-                                onClick={() => setShowDeleteModal(false)}
-                                className="text-gray-500 hover:text-gray-700"
-                            >
-                                &times;
-                            </button>
-                        </div>
-                        <p className="mb-6">Bạn có chắc chắn muốn xóa mạng này không? Hành động này không thể hoàn tác.</p>
-                        <div className="flex justify-end space-x-3">
-                            <button
-                                onClick={() => setShowDeleteModal(false)}
-                                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md"
-                            >
-                                Hủy
-                            </button>
-                            <button
-                                onClick={handleDeleteNetwork}
-                                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md"
-                            >
-                                Xóa
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <button
+              type="submit"
+              disabled={loading}
+              className={`w-full py-3 text-white font-bold rounded-md ${loading ? 'bg-gray-400' : 'bg-blue-600 hover:bg-blue-700'}`}
+            >
+              {loading ? 'Đang tạo...' : 'Tạo Network'}
+            </button>
+          </form>
+
+          {error && <div className="mt-4 p-4 bg-red-100 text-red-800">{error}</div>}
+          {successMessage && <div className="mt-4 p-4 bg-green-100 text-green-800">{successMessage}</div>}
         </div>
-    );
-};
 
-export default NetworkingPage;
+        <div className="bg-white rounded-lg shadow-md p-6">
+          <h2 className="text-2xl font-bold text-center mb-6">Danh sách Networks</h2>
+
+          {networks.length === 0 ? (
+            <div className="text-center text-gray-500">Không có networks nào</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Tên</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500">Hành động</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {networks.map((network) => (
+                    <tr key={network.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 text-sm text-gray-900">{network.name}</td>
+                      <td className="px-6 py-4 text-sm text-gray-500">{network.id}</td>
+                      <td className="px-6 py-4 text-sm space-x-2">
+                        <button onClick={() => handleDelete(network.id)} className="text-red-600 hover:text-red-900">Xóa</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
