@@ -260,7 +260,6 @@ class InstancesAPIView(APIView):
             # Lấy dữ liệu từ request
             name = request.data.get("name")
             availability_zone = request.data.get("availability_zone", "nova")
-            count = request.data.get("count", 1)
 
             select_boot_source = request.data.get("select_boot_source", "Image")
             create_new_volume = request.data.get("create_new_volume", True)
@@ -518,7 +517,9 @@ class FlavorAPIView(APIView):
 class NetworkAPIView(APIView):
     def get(self, request, network_id=None):
         token = request.headers.get("X-Auth-Token")
-        headers = {"X-Auth-Token": token}
+        headers = {
+            "X-Auth-Token": token
+        }
 
         try:
             if network_id:
@@ -541,14 +542,13 @@ class NetworkAPIView(APIView):
             "X-Auth-Token": token,
             "Content-Type": "application/json"
         }
-
         try:
             data = request.data
 
             network_name = data.get("name")
             subnet_name = data.get("subnet_name")
-            network_cidr = data.get("cidr")  # VD: 10.0.0.0/24
-            gateway_ip = data.get("gateway_ip")  # VD: 10.0.0.1
+            network_cidr = data.get("cidr")
+            gateway_ip = data.get("gateway_ip")
             enable_dhcp = data.get("enable_dhcp", True)
 
             # 1. Tạo network
@@ -648,6 +648,7 @@ class NetworkAPIView(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+
 
 class SubnetAPIView(APIView):
     def get(self, request, network_id=None):
@@ -1242,6 +1243,32 @@ class RestoreInstanceFromSnapshotAPIView(APIView):
 
 
 class RouterAPIView(APIView):
+    def get(self, request, router_id=None):
+        # Lấy thông tin router
+        token = request.headers.get("X-Auth-Token")
+        headers = {"X-Auth-Token": token}
+
+        try:
+            if router_id:
+                # Lấy thông tin router cụ thể
+                url = f"{URL_AUTH}:9696/networking/v2.0/routers/{router_id}"
+            else:
+                # Lấy danh sách tất cả routers
+                url = f"{URL_AUTH}:9696/networking/v2.0/routers/detail"
+
+            res = requests.get(url, headers=headers)
+
+            if res.status_code != 200:
+                return Response({
+                    "error": "Không thể lấy thông tin router",
+                    "details": res.json()
+                }, status=res.status_code)
+
+            return Response(res.json(), status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
     def post(self, request):
         # Tạo router mới
         token = request.headers.get("X-Auth-Token")
@@ -1277,6 +1304,41 @@ class RouterAPIView(APIView):
                 }, status=res.status_code)
 
             return Response(res.json(), status=201)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
+    def put(self, request, router_id):
+        # Cập nhật router theo ID
+        token = request.headers.get("X-Auth-Token")
+        headers = {
+            "X-Auth-Token": token,
+            "Content-Type": "application/json"
+        }
+
+        try:
+            router_name = request.data.get("router_name")
+            admin_state_up = request.data.get("admin_state_up")
+
+            # Tạo payload với các trường cần cập nhật
+            payload = {
+                "router": {}
+            }
+            if router_name is not None:
+                payload["router"]["name"] = router_name
+            if admin_state_up is not None:
+                payload["router"]["admin_state_up"] = admin_state_up
+
+            url = f"{URL_AUTH}:9696/networking/v2.0/routers/{router_id}"
+            res = requests.put(url, headers=headers, json=payload)
+
+            if res.status_code != 200:
+                return Response({
+                    "error": "Không thể cập nhật router",
+                    "details": res.json()
+                }, status=res.status_code)
+
+            return Response(res.json(), status=200)
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)

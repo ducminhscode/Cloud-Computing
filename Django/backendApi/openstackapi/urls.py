@@ -2,8 +2,8 @@ from django.urls import path
 
 from .views import LoginKeystone, InstancesAPIView, NetworkAPIView, VolumeAPIView, SubnetAPIView, PortAPIView, \
     FlavorAPIView, RegisterAPIView, ImagesAPIView, SecurityGroupAPIView, KeyPairAPIView, \
-    RestoreInstanceFromSnapshotAPIView, RestoreVolumeFromSnapshotAPIView, VolumeSnapshotAPIView, InstanceSnapshotAPIView
-
+    RestoreInstanceFromSnapshotAPIView, RestoreVolumeFromSnapshotAPIView, VolumeSnapshotAPIView, \
+    InstanceSnapshotAPIView, RouterAPIView
 
 urlpatterns = [
     path("login/", LoginKeystone.as_view()),
@@ -24,6 +24,8 @@ urlpatterns = [
     path('subnets/', SubnetAPIView.as_view()),
     path('networks/<str:network_id>/subnets/', SubnetAPIView.as_view()),
     path('networks/<str:network_id>/ports/', PortAPIView.as_view()),
+    path('routers/', RouterAPIView.as_view()),
+    path('networks/<str:router_id>/routers', RouterAPIView.as_view()),
 
     path('volumes/', VolumeAPIView.as_view()),
     path('volumes/<str:volume_id>/', VolumeAPIView.as_view()),
