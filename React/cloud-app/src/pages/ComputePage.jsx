@@ -11,10 +11,14 @@ export default function ComputePage() {
   const [successMessage, setSuccessMessage] = useState('');
   const [instances, setInstances] = useState([]);
   const [isLoadingInstances, setIsLoadingInstances] = useState(false);
+  const [selectedSecurityGroups, setSelectedSecurityGroups] = useState([]); // NEW
+
 
   const [images, setImages] = useState([]);
   const [flavors, setFlavors] = useState([]);
   const [networks, setNetworks] = useState([]);
+  const [securityGroups, setSecurityGroups] = useState([]); // NEW
+
 
   useEffect(() => {
     const fetchResources = async () => {
@@ -22,16 +26,18 @@ export default function ComputePage() {
       const headers = { 'X-Auth-Token': token };
 
       try {
-        const [imgRes, flavorRes, netRes, instanceRes] = await Promise.all([
+        const [imgRes, flavorRes, netRes, sgRes, instanceRes] = await Promise.all([
           Apis.get(endpoints['image'], { headers }),
           Apis.get(endpoints['flavors'], { headers }),
           Apis.get(endpoints['networks'], { headers }),
+          Apis.get(endpoints['security-groups'], { headers }), // NEW
           Apis.get(endpoints['instances'], { headers })
         ]);
 
         setImages(imgRes.data.images || []);
         setFlavors(flavorRes.data.flavors || []);
         setNetworks(netRes.data.networks || []);
+        setSecurityGroups(sgRes.data.security_groups || []); // NEW
         setInstances(instanceRes.data.servers || []);
       } catch (err) {
         console.error('Lỗi khi tải tài nguyên:', err);
@@ -70,6 +76,7 @@ export default function ComputePage() {
       source: imageRef,
       flavor: flavorRef,
       network: networkIds,
+      security_group: selectedSecurityGroups, // NEW
       select_boot_source: "Image",
       create_new_volume: false,
       delete_volume_instance: false
@@ -91,6 +98,7 @@ export default function ComputePage() {
         setImageRef('');
         setFlavorRef('');
         setNetworkId('');
+        setSelectedSecurityGroups([]); // NEW
       }
     } catch (err) {
       console.error("Chi tiết lỗi:", err);
