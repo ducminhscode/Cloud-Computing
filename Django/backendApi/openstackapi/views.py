@@ -1254,7 +1254,7 @@ class RouterAPIView(APIView):
                 url = f"{URL_AUTH}:9696/networking/v2.0/routers/{router_id}"
             else:
                 # Lấy danh sách tất cả routers
-                url = f"{URL_AUTH}:9696/networking/v2.0/routers/detail"
+                url = f"{URL_AUTH}:9696/networking/v2.0/routers"
 
             res = requests.get(url, headers=headers)
 
