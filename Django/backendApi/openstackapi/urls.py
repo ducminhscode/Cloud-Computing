@@ -27,9 +27,9 @@ urlpatterns = [
     path('networks/<str:network_id>/subnets/', SubnetAPIView.as_view()),
     path('networks/<str:network_id>/ports/', PortAPIView.as_view()),
     path('routers/', RouterAPIView.as_view()),
-    path('networks/<str:router_id>/routers', RouterAPIView.as_view()),
-    path('networks/<str:router_id>/add_router_interface', RouterInterfaceAPIView.as_view(), {'action': 'add_router_interface'}),
-    path('networks/<str:router_id>/remove_router_interface', RouterInterfaceAPIView.as_view(), {'action': 'remove_router_interface'}),
+    path('networks/<str:router_id>/routers/', RouterAPIView.as_view()),
+    path('networks/<str:router_id>/add_router_interface/', RouterInterfaceAPIView.as_view(), {'action': 'add_router_interface'}),
+    path('networks/<str:router_id>/remove_router_interface/', RouterInterfaceAPIView.as_view(), {'action': 'remove_router_interface'}),
 
     path('volumes/', VolumeAPIView.as_view()),
     path('volumes/<str:volume_id>/', VolumeAPIView.as_view()),

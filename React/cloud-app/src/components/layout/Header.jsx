@@ -9,6 +9,9 @@ const services = [
     { name: "Images", route: "/service/images" },
     { name: "Flavors", route: "/service/flavors" },
     { name: "Snapshots", route: "/service/snapshots" },
+    { name: "Routers", route: "/service/routers" },
+    { name: "Security Groups", route: "/service/security-groups" },
+
 ];
 
 const Header = ({ setIsLoggedIn }) => {

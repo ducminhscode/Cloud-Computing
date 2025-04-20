@@ -19,6 +19,9 @@ export const endpoints = {
     'snapshot-volume': 'snapshot-volume/',
     'snapshots-restore-instance':'snapshots-restore-instance/',
     'snapshots-restore-volume':'snapshots-restore-volume/',
+    'routers':'routers/',
+    'security-groups':'security-groups/',
+    
 }
 
 export default axios.create({

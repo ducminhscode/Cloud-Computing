@@ -94,6 +94,34 @@ export default function HomePage() {
       ],
       api: "volume/v3/snapshots",
     },
+    {
+      name: "Router (Neutron)",
+      description: "Quản lý các router trong mạng ảo, cấu hình gateway và routing.",
+      icon: "fas fa-network-wired",
+      color: "from-blue-800 to-red-600",
+      route: "/service/routers",
+      features: [
+        "Tạo router mới với tên và trạng thái",
+        "Cấu hình gateway ngoài (external network)",
+        "Xem danh sách và chi tiết router",
+        "Cập nhật hoặc xoá router"
+      ],
+      api: "networking/v2.0/routers"
+    },
+    {
+      name: "Security Group (Neutron)",
+      description: "Quản lý các security groups để bảo vệ tài nguyên mạng.",
+      icon: "fas fa-shield-alt",
+      color: "from-yellow-500 to-orange-600",
+      route: "/service/security-groups",
+      features: [
+        "Xem danh sách Security Groups",
+        "Xem số lượng và chi tiết các rule",
+        "Tạo hoặc xoá Security Group (tuỳ chọn)",
+        "Quản lý rule của từng Security Group"
+      ],
+      api: "networking/v2.0/security-groups"
+    }        
   ];  
 
   const handleDetailClick = (route) => {
